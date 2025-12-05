@@ -1,0 +1,59 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build toml
+
+      - name: Derive version from tag
+        run: |
+          ref="${GITHUB_REF##*/}"
+          ver="${ref#v}"
+          echo "RELEASE_VERSION=$ver" >> $GITHUB_ENV
+
+      - name: Set project version to tag
+        run: |
+          python - <<'PY'
+          import os, re, pathlib
+          import toml
+          version = os.environ["RELEASE_VERSION"]
+          pp = pathlib.Path("pyproject.toml")
+          data = toml.loads(pp.read_text())
+          data["project"]["version"] = version
+          pp.write_text(toml.dumps(data))
+          init = pathlib.Path("grumpy/__init__.py")
+          if init.exists():
+              text = init.read_text()
+              text = re.sub(r'__version__\s*=\s*["\']([^"\']*)["\']', f'__version__ = "{version}"', text)
+              init.write_text(text)
+          print(f"Set version to {version}")
+          PY
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+
