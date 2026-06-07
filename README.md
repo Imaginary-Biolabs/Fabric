@@ -1,58 +1,45 @@
-# grumpy
+# imaginary-fabric
 
-Minimal Python package ready to publish to PyPI.
+Python orchestration layer for molecular ML on [Grumpy](https://github.com/Imaginary-Biolabs/grumpy).
 
-## Install (after publishing)
+## Install
 
 ```bash
-pip install grumpy
+# Grumpy is required for data features (install from sibling repo in the monorepo):
+pip install -e ../grumpy
+
+pip install -e ".[core]"
+```
+
+Platform client (Phase 8+):
+
+```bash
+pip install -e ".[platform]"
+```
+
+Development:
+
+```bash
+pip install -e ".[dev]"
 ```
 
 ## Usage
 
 ```python
-import grumpy
-print(grumpy.__version__)
+from fabric import Settings
+
+assert Settings.home == Settings.dataset_path  # ~/.imaginary
+
+with Settings(home="/tmp/my-imaginary"):
+    assert Settings.dataset_path == Path("/tmp/my-imaginary")
 ```
 
 ## Development
 
-Recommended: use a virtual environment (`python -m venv .venv && source .venv/bin/activate`).
-
-### Build the distribution
-
 ```bash
-python -m pip install --upgrade build
-python -m build
+make install
+make lint
+make test
 ```
 
-This creates files in `dist/` (a wheel and an sdist).
-
-### Upload to TestPyPI first
-
-```bash
-python -m pip install --upgrade twine
-twine upload --repository testpypi dist/*
-```
-
-Verify install from TestPyPI:
-
-```bash
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple grumpy
-```
-
-### Upload to PyPI
-
-```bash
-twine upload dist/*
-```
-
-### Makefile shortcuts
-
-```bash
-make build
-make publish-test
-make publish
-```
-
-
+Phased build plan: `.ai/project/fabric-impl-plan.md` (in the Imaginary monorepo).

@@ -1,4 +1,15 @@
-.PHONY: build publish-test publish clean
+.PHONY: install lint test build publish-test publish clean
+
+install:
+	python -m pip install --upgrade pip
+	if [ -d ../grumpy ]; then pip install -e ../grumpy; fi
+	pip install -e ".[dev]"
+
+lint:
+	ruff check src tests
+
+test:
+	pytest tests/tolls/test_phase_1.py -x --tb=short -q
 
 build:
 	python -m pip install --upgrade build
@@ -12,6 +23,5 @@ publish: build
 	twine upload dist/*
 
 clean:
-	rm -rf build dist *.egg-info
-
-
+	rm -rf build dist .pytest_cache .ruff_cache src/*.egg-info
+	find . -type d -name __pycache__ -prune -exec rm -rf {} +

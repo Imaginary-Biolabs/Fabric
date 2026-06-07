@@ -1,0 +1,4 @@
+external:
+  LocalAdapter:
+    paths: ["tests/fixtures/structures/*.pdb"]
+transforms: []
