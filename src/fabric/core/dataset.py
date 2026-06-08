@@ -87,6 +87,27 @@ def _resolve_parent_config(parent_id: str, *, config_dir: Path) -> Path:
     )
 
 
+def _merge_config_assets(cfg: DictConfig, assets: Assets) -> Assets:
+    """Merge YAML ``assets`` section into ingest-sidecar metadata.
+
+    Args:
+        cfg: Dataset configuration that may declare an ``assets`` mapping.
+        assets: Assets produced by external ingest or parent load.
+
+    Returns:
+        Assets with config-level keys overlaid on ingest metadata.
+    """
+    raw = cfg.get("assets")
+    if raw is None:
+        return assets
+    merged = Assets(data=dict(assets.data))
+    payload = OmegaConf.to_container(raw, resolve=True)
+    if not isinstance(payload, dict):
+        raise ConfigError("Dataset 'assets' section must be a mapping")
+    merged.data.update(payload)
+    return merged
+
+
 def _read_release_meta(path: Path) -> dict[str, Any]:
     """Load ``release.json`` when present.
 
@@ -359,6 +380,7 @@ class Dataset:
         transformed_batches, assets, splits = self.transforms.apply(
             batches, assets, splits, n_scenes=n_scenes
         )
+        assets = _merge_config_assets(self.cfg, assets)
         meta = {
             "id": self.id,
             "version": self.version,

@@ -5,6 +5,20 @@ external:
     paths:
       - "tests/fixtures/structures/mini.pdb"
       - "tests/fixtures/structures/mol_*.pdb"
+assets:
+  stability:
+    - 0.10
+    - 0.20
+    - 0.30
+    - 0.40
+    - 0.50
+    - 0.60
+    - 0.70
+    - 0.80
+    - 0.90
+    - 1.00
+    - 1.10
+    - 1.20
 transforms:
   - RandomSplit: { n_train: 8, n_val: 2, n_test: 2 }
   - FilterSequenceLength: { max_len: 512 }

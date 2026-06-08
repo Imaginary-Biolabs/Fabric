@@ -16,7 +16,12 @@ from rich.progress import (
     TimeRemainingColumn,
 )
 
-from fabric.utils.constants import BRAND_GREEN_DARK, BRAND_GREEN_LIGHT, BRAND_INK_600
+from fabric.utils.constants import (
+    BRAND_GREEN_DARK,
+    BRAND_GREEN_LIGHT,
+    BRAND_INK_400,
+    BRAND_INK_600,
+)
 
 _console = Console(stderr=True)
 
@@ -27,7 +32,9 @@ def info(message: str) -> None:
     Args:
         message: Message text (without the ``fabric`` prefix).
     """
-    _console.print(f"[bold cyan]fabric[/] {message}")
+    _console.print(
+        f"[bold {BRAND_GREEN_DARK}]fabric[/] [{BRAND_INK_400}]{message}[/]",
+    )
 
 
 def warn(message: str) -> None:
@@ -58,7 +65,7 @@ def _imaginary_progress(*, transient: bool = True) -> Progress:
         Configured :class:`~rich.progress.Progress` instance.
     """
     return Progress(
-        TextColumn("[bold]fabric[/] {task.description}"),
+        TextColumn(f"[bold {BRAND_GREEN_DARK}]fabric[/] {{task.description}}"),
         BarColumn(
             bar_width=40,
             style=BRAND_INK_600,
@@ -154,6 +161,27 @@ def progress(
         ...     bar.advance(10)
     """
     return ProgressBar(description, total, transient=transient)
+
+
+def loader_description(split: str, *, benchmark_id: str) -> str:
+    """Build a branded Rich label for benchmark split loaders.
+
+    Args:
+        split: Partition name such as ``"train"``, ``"val"``, or ``"test"``.
+        benchmark_id: Benchmark identifier from YAML.
+
+    Returns:
+        Rich markup string for progress bar descriptions.
+
+    Example:
+        >>> loader_description("train", benchmark_id="B_mini")
+        '[#9bc4a8]train[/#9bc4a8] [#777067]·[/] [bold]B_mini[/]'
+    """
+    return (
+        f"[{BRAND_GREEN_DARK}]{split}[/{BRAND_GREEN_DARK}] "
+        f"[{BRAND_INK_400}]·[/] "
+        f"[bold]{benchmark_id}[/]"
+    )
 
 
 def track(

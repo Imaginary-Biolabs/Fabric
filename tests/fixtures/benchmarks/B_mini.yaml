@@ -1,0 +1,10 @@
+id: B_mini
+dataset: D_local
+split_scheme: random_8_2_2
+sampler:
+  RandomMoleculeSampler: {}
+task:
+  PropertyPredictionTask:
+    target: stability
+metrics:
+  - MAE: {}

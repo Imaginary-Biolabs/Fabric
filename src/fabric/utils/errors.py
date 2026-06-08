@@ -54,6 +54,22 @@ class TransformError(FabricError):
     """
 
 
+class BenchmarkError(FabricError):
+    """Benchmark configuration or loader error."""
+
+
+class SamplerError(FabricError):
+    """Sampler configuration or indexing error."""
+
+
+class TaskError(FabricError):
+    """Task input/target extraction error."""
+
+
+class MetricError(FabricError):
+    """Metric state or computation error."""
+
+
 class PlatformExtraRequired(FabricError):
     """Optional platform dependencies are not installed.
 

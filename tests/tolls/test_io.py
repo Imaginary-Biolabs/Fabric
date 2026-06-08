@@ -7,7 +7,19 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from fabric.utils import constants
-from fabric.utils.io import ProgressBar, _imaginary_progress, progress, track
+from fabric.utils.io import (
+    ProgressBar,
+    _imaginary_progress,
+    loader_description,
+    progress,
+    track,
+)
+
+
+def test_loader_description_uses_brand_markup() -> None:
+    label = loader_description("train", benchmark_id="B_mini")
+    assert constants.BRAND_GREEN_DARK in label
+    assert "B_mini" in label
 
 
 def test_imaginary_progress_uses_brand_colors() -> None:
