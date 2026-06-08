@@ -10,6 +10,7 @@ import grumpy as gr
 from grumpy import GrumpyArray
 
 from fabric.core.data import Data
+from fabric.core.scaffold import CollaterSpec
 
 
 @dataclass
@@ -29,6 +30,24 @@ class CollatedBatch:
     scene_index: GrumpyArray | None = None
     meta: dict[str, Any] = field(default_factory=dict)
 
+    @property
+    def layout(self) -> str:
+        """Batch layout name such as ``flat`` or ``long``."""
+        return str(self.meta.get("layout", "flat"))
+
+    def slot(self, name: str) -> GrumpyArray:
+        """Return a named Grumpy slot from the batch."""
+        if name == "features":
+            return self.features
+        if name == "y":
+            return self.y
+        if name == "scene_index" and self.scene_index is not None:
+            return self.scene_index
+        slots = self.meta.get("slots", {})
+        if name not in slots:
+            raise KeyError(f"CollatedBatch has no slot '{name}'")
+        return slots[name]
+
     def uncollate_y(self, y_pred: GrumpyArray) -> GrumpyArray:
         """Map per-row predictions back to a Grumpy target array."""
         return y_pred.flatten().astype(gr.float64)
@@ -38,6 +57,11 @@ class Collater(ABC):
     """Convert benchmark ``(X, y)`` batches into backend-ready arrays."""
 
     name: str = "Collater"
+
+    @property
+    def spec(self) -> CollaterSpec:
+        """Layout contract published by this collater."""
+        raise NotImplementedError
 
     @abstractmethod
     def collate(self, X: tuple[Data, ...], y: GrumpyArray | None) -> CollatedBatch:

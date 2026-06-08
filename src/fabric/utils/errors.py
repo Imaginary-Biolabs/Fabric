@@ -82,6 +82,10 @@ class TrainerError(FabricError):
     """Trainer configuration or loop error."""
 
 
+class ModelError(FabricError):
+    """Model, layer, scaffold, or objective configuration error."""
+
+
 class BackendExtraRequired(FabricError):
     """Optional backend dependencies are not installed."""
 

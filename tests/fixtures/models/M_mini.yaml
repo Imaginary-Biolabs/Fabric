@@ -1,0 +1,17 @@
+id: M_mini
+input:
+  layout: flat
+  slots: [features]
+scaffold:
+  MLPScaffold:
+    hidden: [8]
+    output_dim: 1
+objective:
+  SupervisedObjective:
+    loss: mse
+optimizer:
+  Adam:
+    lr: 0.001
+trainer_defaults:
+  collater: WideCollater
+  backend: TorchBackend

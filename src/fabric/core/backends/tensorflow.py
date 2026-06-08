@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -79,12 +81,49 @@ class TensorflowBackend(Backend):
     def to_grumpy(self, tensor: Any) -> GrumpyArray:
         return gr.from_tensorflow(tensor, dtype=gr.float32)
 
+    def batch_tensors(self, batch: CollatedBatch) -> dict[str, Any]:
+        tensors = {
+            "features": self.to_tensor(batch.features),
+            "y": self.to_tensor(batch.y),
+        }
+        for name, value in batch.meta.get("slots", {}).items():
+            if name in tensors:
+                continue
+            tensors[name] = self.to_tensor(value)
+        if batch.scene_index is not None:
+            tensors["scene_index"] = self.to_tensor(batch.scene_index)
+        return tensors
+
+    def mse_loss(self, predictions: Any, targets: Any) -> Any:
+        tf = self._tf
+        return tf.reduce_mean(tf.square(predictions - targets))
+
+    def loss_value(self, loss: Any) -> float:
+        return float(loss.numpy())
+
+    @contextmanager
+    def no_grad(self) -> Iterator[None]:
+        yield
+
+    def zero_grad(self, model: Any) -> None:
+        return None
+
+    def backward(self, loss: Any) -> None:
+        raise BackendError("TensorflowBackend.backward requires a GradientTape train_step")
+
+    def step(self, model: Any) -> None:
+        return None
+
     def _predict(self, model: Any, features: Any) -> Any:
         tf = self._tf
         output = model(features, training=False)
         return tf.reshape(output, (-1,))
 
     def train_step(self, model: Any, batch: CollatedBatch) -> float:
+        if hasattr(model, "training_step"):
+            raise BackendError(
+                "Fabric Model training_step is not supported on TensorflowBackend yet"
+            )
         tf = _require_tensorflow()
         self._init_runtime()
         optimizer = _require_model_optimizer(model)
@@ -100,7 +139,11 @@ class TensorflowBackend(Backend):
             raise BackendError("Training step produced NaN loss")
         return value
 
-    def eval_step(self, model: Any, batch: CollatedBatch) -> tuple[float, np.ndarray]:
+    def eval_step(self, model: Any, batch: CollatedBatch) -> tuple[float, GrumpyArray]:
+        if hasattr(model, "validation_step"):
+            raise BackendError(
+                "Fabric Model validation_step is not supported on TensorflowBackend yet"
+            )
         tf = _require_tensorflow()
         self._init_runtime()
         features = self.to_tensor(batch.features)

@@ -1,0 +1,11 @@
+model: M_mini
+benchmark: B_mini
+backend:
+  TorchBackend:
+    accelerator: cpu
+collater:
+  WideCollater:
+    features: [residue_count, atom_count]
+epochs: 1
+batch_size: 4
+root: results/mini

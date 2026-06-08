@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -92,10 +94,20 @@ class TorchBackend(Backend):
         self._init_runtime()
         optimizer = _require_model_optimizer(model)
         if self._fabric is not None:
-            model, optimizer = self._fabric.setup(model, optimizer)
+            target = model
+            if hasattr(model, "module"):
+                target = getattr(model.module, "network", model.module)
+            wrapped, optimizer = self._fabric.setup(target, optimizer)
+            if hasattr(model, "module") and hasattr(model.module, "network"):
+                model.module.network = wrapped
+            elif hasattr(model, "module"):
+                model.module = wrapped
+            else:
+                model = wrapped
             model.optimizer = optimizer
             return model
-        model = model.to(self.device)
+        if hasattr(model, "to"):
+            model = model.to(self.device)
         return model
 
     def to_tensor(self, array: GrumpyArray) -> Any:
@@ -105,6 +117,47 @@ class TorchBackend(Backend):
     def to_grumpy(self, tensor: Any) -> GrumpyArray:
         return gr.from_torch(tensor.detach().cpu(), dtype=gr.float32)
 
+    def batch_tensors(self, batch: CollatedBatch) -> dict[str, Any]:
+        """Convert standard collated slots to framework tensors."""
+        tensors = {
+            "features": self.to_tensor(batch.features),
+            "y": self.to_tensor(batch.y),
+        }
+        for name, value in batch.meta.get("slots", {}).items():
+            if name in tensors:
+                continue
+            tensors[name] = self.to_tensor(value)
+        if batch.scene_index is not None:
+            tensors["scene_index"] = self.to_tensor(batch.scene_index)
+        return tensors
+
+    def mse_loss(self, predictions: Any, targets: Any) -> Any:
+        torch = _require_torch()
+        return torch.mean((predictions - targets) ** 2)
+
+    def loss_value(self, loss: Any) -> float:
+        return float(loss.detach().cpu().item())
+
+    @contextmanager
+    def no_grad(self) -> Iterator[None]:
+        torch = _require_torch()
+        with torch.no_grad():
+            yield
+
+    def zero_grad(self, model: Any) -> None:
+        optimizer = _require_model_optimizer(model)
+        optimizer.zero_grad(set_to_none=True)
+
+    def backward(self, loss: Any) -> None:
+        if self._fabric is not None:
+            self._fabric.backward(loss)
+            return
+        loss.backward()
+
+    def step(self, model: Any) -> None:
+        optimizer = _require_model_optimizer(model)
+        optimizer.step()
+
     def _predict(self, model: Any, features: Any) -> Any:
         output = model(features)
         if output.ndim > 1:
@@ -112,6 +165,8 @@ class TorchBackend(Backend):
         return output
 
     def train_step(self, model: Any, batch: CollatedBatch) -> float:
+        if hasattr(model, "training_step"):
+            return model.training_step(batch, backend=self).loss
         torch = _require_torch()
         self._init_runtime()
         optimizer = _require_model_optimizer(model)
@@ -121,17 +176,17 @@ class TorchBackend(Backend):
         optimizer.zero_grad(set_to_none=True)
         predictions = self._predict(model, features)
         loss = torch.mean((predictions - targets) ** 2)
-        if self._fabric is not None:
-            self._fabric.backward(loss)
-        else:
-            loss.backward()
+        self.backward(loss)
         optimizer.step()
-        value = float(loss.detach().cpu().item())
+        value = self.loss_value(loss)
         if math.isnan(value):
             raise BackendError("Training step produced NaN loss")
         return value
 
     def eval_step(self, model: Any, batch: CollatedBatch) -> tuple[float, GrumpyArray]:
+        if hasattr(model, "validation_step"):
+            result = model.validation_step(batch, backend=self)
+            return result.loss, result.predictions
         torch = _require_torch()
         self._init_runtime()
         model.eval()
@@ -140,7 +195,7 @@ class TorchBackend(Backend):
             targets = self.to_tensor(batch.y)
             predictions = self._predict(model, features)
             loss = torch.mean((predictions - targets) ** 2)
-        return float(loss.detach().cpu().item()), self.to_grumpy(predictions)
+        return self.loss_value(loss), self.to_grumpy(predictions)
 
     def save_checkpoint(
         self,
@@ -155,8 +210,9 @@ class TorchBackend(Backend):
         optimizer = _require_model_optimizer(model)
         checkpoint = Path(path)
         checkpoint.parent.mkdir(parents=True, exist_ok=True)
+        state = model.state_dict()
         payload = {
-            "model": model.state_dict(),
+            "model": state,
             "optimizer": optimizer.state_dict(),
             "epoch": epoch,
             "step": step,
@@ -175,6 +231,9 @@ class TorchBackend(Backend):
             payload = self._fabric.load(checkpoint)
         else:
             payload = torch.load(checkpoint, map_location=self.device)
-        model.load_state_dict(payload["model"])
+        if hasattr(model, "load_state_dict"):
+            model.load_state_dict(payload["model"])
+        else:
+            model.load_state_dict(payload["model"])
         optimizer.load_state_dict(payload["optimizer"])
         return {"epoch": int(payload["epoch"]), "step": int(payload["step"])}

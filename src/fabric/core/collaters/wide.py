@@ -6,6 +6,7 @@ from grumpy import GrumpyArray
 from fabric.core.collater import CollatedBatch, Collater
 from fabric.core.collaters._features import extract_feature_matrix
 from fabric.core.data import Data
+from fabric.core.scaffold import CollaterSpec
 from fabric.utils.errors import CollateError
 
 
@@ -26,6 +27,10 @@ class WideCollater(Collater):
     def __init__(self, features: list[str]) -> None:
         self.features = [str(name) for name in features]
 
+    @property
+    def spec(self) -> CollaterSpec:
+        return CollaterSpec(layout="flat", slots=("features",))
+
     def collate(self, X: tuple[Data, ...], y: GrumpyArray | None) -> CollatedBatch:
         """Build a dense feature matrix for one loader batch."""
         if not X:
@@ -42,4 +47,8 @@ class WideCollater(Collater):
                 f"Feature batch size {batch_size} does not match target size "
                 f"{int(targets.shape(0))}"
             )
-        return CollatedBatch(features=features, y=targets)
+        return CollatedBatch(
+            features=features,
+            y=targets,
+            meta={"layout": "flat", "slots": {"features": features}},
+        )
