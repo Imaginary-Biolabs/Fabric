@@ -8,13 +8,125 @@ from typing import Any
 import grumpy as gr
 from grumpy import GrumpyArray
 
-from fabric.core.metric_axis import (
-    apply_reduction,
-    group_values,
-    grumpy_ndim,
-    metric_value_to_python,
-)
+from fabric.utils.constants import SCHEMA
 from fabric.utils.errors import MetricError
+
+_REDUCTIONS = frozenset({"mean", "sum", "min", "max", "median"})
+
+
+def _schema_levels() -> list[str]:
+    levels: list[str] = []
+    for entry in SCHEMA:
+        if isinstance(entry, tuple):
+            levels.extend(entry)
+        else:
+            levels.append(entry)
+    return levels
+
+
+def _level_index(level: str) -> int:
+    levels = _schema_levels()
+    if level not in levels:
+        available = ", ".join(levels)
+        raise MetricError(f"Unknown schema level '{level}'; expected one of: {available}")
+    return levels.index(level)
+
+
+def _grumpy_ndim(values: GrumpyArray) -> int:
+    """Infer list-chain depth from nested list structure."""
+
+    def depth(node: Any) -> int:
+        if not isinstance(node, list):
+            return 0
+        if not node:
+            return 1
+        child_depths = [depth(child) for child in node]
+        return 1 if all(d == 0 for d in child_depths) else 1 + max(child_depths)
+
+    return depth(values.to_list())
+
+
+def _resolve_dim(level: str | int, *, ndim: int) -> int:
+    if isinstance(level, int):
+        return level if level >= 0 else ndim + level
+    raise MetricError(
+        f"Cannot resolve schema level '{level}' without nesting context; "
+        "pass an integer dim index instead."
+    )
+
+
+def _reduce_dim(values: GrumpyArray, dim: int, op: str) -> GrumpyArray | float:
+    if op not in _REDUCTIONS:
+        raise MetricError(f"Unknown group reduction '{op}'")
+    return getattr(values, op)(dim=dim)
+
+
+def _group_values(
+    values: GrumpyArray,
+    *,
+    on: str | int | None,
+    per: str | int | None,
+    group_reduction: str,
+) -> GrumpyArray:
+    if on is None or per is None:
+        return values
+
+    ndim = _grumpy_ndim(values)
+    if ndim < 1:
+        raise MetricError("Metric 'on' requires nested Grumpy arrays; got flat data")
+
+    if isinstance(on, str):
+        on_dim = ndim - 1
+        on_level = on
+    else:
+        on_dim = _resolve_dim(on, ndim=ndim)
+        on_level = None
+
+    if isinstance(per, str):
+        if on_level is None:
+            raise MetricError(
+                "Metric 'per' as a schema level requires 'on' to name a schema level too"
+            )
+        if _level_index(per) >= _level_index(on_level):
+            raise MetricError(
+                f"Metric 'per' ({per}) must be an outer schema level relative to 'on' ({on_level})"
+            )
+        per_dim = 0
+    else:
+        per_dim = _resolve_dim(per, ndim=ndim)
+
+    if per_dim >= on_dim:
+        raise MetricError(
+            f"Metric 'per' ({per}) must be an outer axis relative to 'on' ({on}); "
+            f"got per_dim={per_dim}, on_dim={on_dim}"
+        )
+
+    grouped = values
+    for dim in range(on_dim, per_dim, -1):
+        grouped = _reduce_dim(grouped, dim, group_reduction)
+    return grouped
+
+
+def _apply_reduction(values: GrumpyArray, reduction: str) -> GrumpyArray | float:
+    if reduction == "none":
+        return values
+    if reduction not in _REDUCTIONS:
+        available = ", ".join(["none", *_REDUCTIONS])
+        raise MetricError(f"Unknown reduction '{reduction}'; expected one of: {available}")
+
+    current = values
+    while _grumpy_ndim(current) > 1:
+        current = _reduce_dim(current, 0, reduction)
+    if _grumpy_ndim(current) == 1:
+        current = _reduce_dim(current, 0, reduction)
+    return float(current) if isinstance(current, (int, float)) else current
+
+
+def _metric_value_to_python(value: GrumpyArray | float) -> float | list[Any]:
+    if isinstance(value, GrumpyArray):
+        payload = value.to_list()
+        return float(payload) if isinstance(payload, (int, float)) else payload
+    return float(value)
 
 
 class Metric(ABC):
@@ -64,9 +176,9 @@ class Metric(ABC):
     def _evaluate_batch(self, y_pred: GrumpyArray, y_true: GrumpyArray) -> GrumpyArray:
         """Return grouped metric values for one batch."""
         values = self._elementwise(y_pred, y_true)
-        if self.on is None and self.per is None and grumpy_ndim(values) <= 1:
+        if self.on is None and self.per is None and _grumpy_ndim(values) <= 1:
             return values
-        return group_values(
+        return _group_values(
             values,
             on=self.on,
             per=self.per,
@@ -92,13 +204,13 @@ class Metric(ABC):
         if not self._values:
             raise MetricError(f"{self.name} has no accumulated batches; call update() first")
         combined = self._values[0] if len(self._values) == 1 else gr.cat(self._values, dim=0)
-        result = apply_reduction(combined, self.reduction)
+        result = _apply_reduction(combined, self.reduction)
         self._computed = True
         return result
 
     def compute_value(self) -> float | list[Any]:
         """Return :meth:`compute` output as plain Python scalars or nested lists."""
-        return metric_value_to_python(self.compute())
+        return _metric_value_to_python(self.compute())
 
     def reset(self) -> None:
         """Clear accumulated batches."""
