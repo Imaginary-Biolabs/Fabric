@@ -1,0 +1,10 @@
+id: D_local
+version: 1
+external:
+  LocalAdapter:
+    paths:
+      - "tests/fixtures/structures/mini.pdb"
+      - "tests/fixtures/structures/mol_*.pdb"
+transforms:
+  - RandomSplit: { n_train: 8, n_val: 2, n_test: 2 }
+  - FilterSequenceLength: { max_len: 512 }

@@ -1,0 +1,5 @@
+id: D_child
+version: 1
+parent: D_parent
+transforms:
+  - FilterSequenceLength: { max_len: 512 }

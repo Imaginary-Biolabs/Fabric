@@ -24,8 +24,10 @@ classifiers = [
 
 [project.optional-dependencies]
 core = [
+  "biopandas>=0.5",
   "numpy>=1.23",
   "omegaconf>=2.3",
+  "pandas>=1.5",
   "pyyaml>=6",
   "rich>=13",
 ]

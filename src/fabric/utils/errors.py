@@ -2,23 +2,64 @@
 
 
 class FabricError(Exception):
-    """Base class for Fabric errors."""
+    """Base class for all Fabric errors."""
 
 
 class ConfigurationError(FabricError):
-    """Invalid or missing configuration."""
+    """Invalid or missing user or runtime configuration.
+
+    Raised when settings, YAML paths, or general configuration is invalid.
+    """
+
+
+class ConfigError(ConfigurationError):
+    """Invalid dataset or factory configuration.
+
+    Raised when a dataset YAML declares conflicting or incomplete options.
+    """
+
+
+class ParseError(FabricError):
+    """Structure file parsing failed.
+
+    Raised when a PDB or mmCIF file cannot be read or contains no atoms.
+    """
+
+
+class ExternalError(FabricError):
+    """External data source adapter failed.
+
+    Raised when glob patterns match no files or an adapter is misconfigured.
+    """
+
+
+class DatasetError(FabricError):
+    """Dataset release or cache error.
+
+    Raised when a dataset is accessed before release or a parent is unavailable.
+    """
 
 
 class SchemaError(FabricError):
-    """Biological schema level missing or invalid."""
+    """Biological schema level missing or invalid.
+
+    Raised when Grumpy data does not conform to :data:`~fabric.utils.constants.SCHEMA`.
+    """
 
 
 class TransformError(FabricError):
-    """Transform pipeline error."""
+    """Transform pipeline error.
+
+    Raised when transform configuration or execution fails.
+    """
 
 
 class PlatformExtraRequired(FabricError):
-    """Optional platform dependencies are not installed."""
+    """Optional platform dependencies are not installed.
+
+    Install with ``pip install 'imaginary-fabric[platform]'`` to use
+    :mod:`fabric.platform` HTTP clients.
+    """
 
     def __init__(self) -> None:
         super().__init__(

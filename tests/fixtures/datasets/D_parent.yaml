@@ -1,0 +1,6 @@
+id: D_parent
+version: 1
+external:
+  LocalAdapter:
+    paths: ["tests/fixtures/structures/mini.pdb", "tests/fixtures/structures/mol_01.pdb"]
+transforms: []

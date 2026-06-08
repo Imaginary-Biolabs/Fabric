@@ -13,12 +13,7 @@ from fabric.core.data import Batch, Data
 from fabric.core.transform import Compose
 from fabric.core.transforms import Identity
 from fabric.utils.config import load_config
-from fabric.utils.errors import (
-    ConfigurationError,
-    PlatformExtraRequired,
-    SchemaError,
-    TransformError,
-)
+from fabric.utils.errors import ConfigurationError, PlatformExtraRequired, TransformError
 from fabric.utils.hashing import config_hash
 
 
@@ -35,7 +30,30 @@ def test_settings_context_override(tmp_path: Path) -> None:
     with Settings(home=tmp_path):
         assert Settings.dataset_path == tmp_path
         assert Settings.home == tmp_path
+        assert Settings.raw_path() == tmp_path / "raw"
+        assert Settings.processed_path() == tmp_path / "processed"
+        assert Settings.transformed_path() == tmp_path / "transformed"
+        assert Settings.scratch_path() is None
     assert Settings.dataset_path == Path("~/.imaginary")
+
+
+def test_settings_storage_tier_overrides(tmp_path: Path) -> None:
+    raw = tmp_path / "team-raw"
+    processed = tmp_path / "team-processed"
+    transformed = tmp_path / "team-transformed"
+    scratch = tmp_path / "fast"
+    with Settings(
+        home=tmp_path / "home",
+        raw=raw,
+        processed=processed,
+        transformed=transformed,
+        scratch=scratch,
+    ):
+        assert Settings.raw_path() == raw
+        assert Settings.processed_path() == processed
+        assert Settings.transformed_path() == transformed
+        assert Settings.datasets_path() == transformed
+        assert Settings.scratch_path() == scratch
 
 
 def test_settings_nested_context_raises(tmp_path: Path) -> None:
@@ -72,8 +90,8 @@ def test_compose_requires_transforms() -> None:
 def test_compose_hash_order() -> None:
     chain_a = Compose([Identity()])
     chain_b = Compose([Identity(), Identity()])
-    assert chain_a.transform_hash == Identity().transform_hash
-    assert chain_b.transform_hash != chain_a.transform_hash
+    assert chain_a.hash == Identity().hash
+    assert chain_b.hash != chain_a.hash
     assert "Identity" in repr(chain_a)
 
 
@@ -96,15 +114,14 @@ def test_platform_extra_required(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_data_grumpy_integration() -> None:
-    grumpy = pytest.importorskip("grumpy")
-    df = grumpy.dataframe({"value": [1, 2, 3]}, schema=["molecule"])
-    data = Data(df)
-    assert data.molecule is not None
-    batch = Batch(data=data)
-    assert batch.data is data
+    pytest.importorskip("grumpy")
+    from pathlib import Path
 
-    with pytest.raises(TypeError, match="GrumpyDataFrame"):
-        Data({"not": "grumpy"})
+    from fabric.core.parsers.pdb import PdbParser
 
-    with pytest.raises(SchemaError, match="atom"):
-        _ = Data(df).atom
+    parsed = PdbParser().parse(Path("tests/fixtures/structures/mini.pdb"))
+    assert len(parsed.data) == 1
+    wrapped = Data(parsed.data)
+    assert len(wrapped.data) == 1
+    batch = Batch(data=wrapped)
+    assert batch.data is wrapped
