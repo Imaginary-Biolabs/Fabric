@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import numpy as np
+import grumpy as gr
 from grumpy import GrumpyArray
 
 from fabric.core.collater import CollatedBatch, Collater
@@ -30,13 +30,13 @@ class LongCollater(Collater):
             raise CollateError("Collater received empty inputs")
         data = X[0]
         features = extract_feature_matrix(data, self.features)
-        batch_size = features.shape[0]
-        scene_index = np.arange(batch_size, dtype=np.int64)
+        batch_size = int(features.shape(0))
+        scene_index = gr.array(list(range(batch_size)), dtype=gr.int64)
         if y is None:
-            targets = np.zeros((batch_size,), dtype=np.float32)
+            targets = gr.array([0.0] * batch_size, dtype=gr.float32)
         else:
-            targets = np.asarray(y.to_list(), dtype=np.float32).reshape(-1)
-        if targets.shape[0] != batch_size:
+            targets = y.flatten().astype(gr.float32, casting="unsafe")
+        if int(targets.shape(0)) != batch_size:
             raise CollateError(
                 f"Feature batch size {batch_size} does not match target size {targets.shape[0]}"
             )

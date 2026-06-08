@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any
 
-import numpy as np
+import grumpy as gr
+from grumpy import GrumpyArray
 
 from fabric.core.backend import Backend
 from fabric.core.collater import CollatedBatch
@@ -96,14 +98,12 @@ class TorchBackend(Backend):
         model = model.to(self.device)
         return model
 
-    def to_tensor(self, array: np.ndarray) -> Any:
-        torch = _require_torch()
+    def to_tensor(self, array: GrumpyArray) -> Any:
         self._init_runtime()
-        return torch.as_tensor(array, dtype=torch.float32, device=self.device)
+        return array.to_torch().to(self.device)
 
-    def to_numpy(self, tensor: Any) -> np.ndarray:
-        self._init_runtime()
-        return tensor.detach().cpu().numpy()
+    def to_grumpy(self, tensor: Any) -> GrumpyArray:
+        return gr.from_torch(tensor.detach().cpu(), dtype=gr.float32)
 
     def _predict(self, model: Any, features: Any) -> Any:
         output = model(features)
@@ -127,11 +127,11 @@ class TorchBackend(Backend):
             loss.backward()
         optimizer.step()
         value = float(loss.detach().cpu().item())
-        if np.isnan(value):
+        if math.isnan(value):
             raise BackendError("Training step produced NaN loss")
         return value
 
-    def eval_step(self, model: Any, batch: CollatedBatch) -> tuple[float, np.ndarray]:
+    def eval_step(self, model: Any, batch: CollatedBatch) -> tuple[float, GrumpyArray]:
         torch = _require_torch()
         self._init_runtime()
         model.eval()
@@ -140,8 +140,7 @@ class TorchBackend(Backend):
             targets = self.to_tensor(batch.y)
             predictions = self._predict(model, features)
             loss = torch.mean((predictions - targets) ** 2)
-        pred_np = self.to_numpy(predictions)
-        return float(loss.detach().cpu().item()), pred_np
+        return float(loss.detach().cpu().item()), self.to_grumpy(predictions)
 
     def save_checkpoint(
         self,

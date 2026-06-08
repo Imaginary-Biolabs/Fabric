@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import grumpy as gr
 import numpy as np
 import pytest
 
@@ -144,6 +145,8 @@ def test_long_collater_records_scene_index(bench) -> None:
     collater = LongCollater(features=["residue_count", "atom_count"])
     X, y = next(iter(bench.train_loader(batch_size=2, progress=False)))
     batch = collater.collate(X, y)
-    assert batch.features.shape == (2, 2)
+    assert batch.features.shape(0) == 2
+    assert gr.is_rectangular(batch.features)
+    assert batch.features.shape(1).to_list() == [2, 2]
     assert batch.scene_index is not None
-    assert batch.scene_index.tolist() == [0, 1]
+    assert batch.scene_index.to_list() == [0, 1]

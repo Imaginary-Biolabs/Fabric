@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import grumpy as gr
-import numpy as np
 from grumpy import GrumpyArray
 
 from fabric.core.data import Data
@@ -25,15 +24,14 @@ class CollatedBatch:
         meta: Additional collater-specific metadata.
     """
 
-    features: np.ndarray
-    y: np.ndarray
-    scene_index: np.ndarray | None = None
+    features: GrumpyArray
+    y: GrumpyArray
+    scene_index: GrumpyArray | None = None
     meta: dict[str, Any] = field(default_factory=dict)
 
-    def uncollate_y(self, y_pred: np.ndarray) -> GrumpyArray:
+    def uncollate_y(self, y_pred: GrumpyArray) -> GrumpyArray:
         """Map per-row predictions back to a Grumpy target array."""
-        flat = np.asarray(y_pred).reshape(-1)
-        return gr.array(flat.tolist(), dtype=gr.float64)
+        return y_pred.flatten().astype(gr.float64)
 
 
 class Collater(ABC):

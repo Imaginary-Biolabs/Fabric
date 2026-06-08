@@ -100,10 +100,7 @@ class Trainer:
                 self.logger.log_loss(last_loss, mode="train")
             else:
                 loss, predictions = self.backend.eval_step(self.model, batch)
-                self.benchmark.update(
-                    gr.array(predictions.tolist(), dtype=gr.float64),
-                    y,
-                )
+                self.benchmark.update(predictions.astype(gr.float64), y)
                 last_loss = loss
         return last_loss
 

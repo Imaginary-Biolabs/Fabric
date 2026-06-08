@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-import numpy as np
-from grumpy import GrumpyDataFrame
+import grumpy as gr
+from grumpy import GrumpyArray, GrumpyDataFrame
 
 from fabric.core.data import Data
 from fabric.utils.constants import SCHEMA
@@ -90,7 +90,7 @@ def extract_feature_column(df: GrumpyDataFrame, name: str) -> list[float]:
     return [float(value) for value in values]
 
 
-def extract_feature_matrix(data: Data, features: list[str]) -> np.ndarray:
+def extract_feature_matrix(data: Data, features: list[str]) -> GrumpyArray:
     """Build a rectangular ``(batch, n_features)`` matrix."""
     df = data.data
     if not features:
@@ -98,7 +98,11 @@ def extract_feature_matrix(data: Data, features: list[str]) -> np.ndarray:
     rows = [extract_feature_column(df, name) for name in features]
     if any(len(row) != len(rows[0]) for row in rows):
         raise CollateError("Feature columns must share the same batch length")
-    matrix = np.asarray(rows, dtype=np.float32).T
-    if matrix.ndim != 2:
+    batch_size = len(rows[0])
+    matrix = gr.array(
+        [[rows[col][row] for col in range(len(rows))] for row in range(batch_size)],
+        dtype=gr.float32,
+    )
+    if not gr.is_rectangular(matrix):
         raise CollateError("Collater expected a 2D feature matrix")
     return matrix

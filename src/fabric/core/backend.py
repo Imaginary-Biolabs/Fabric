@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-import numpy as np
+from grumpy import GrumpyArray
 
 from fabric.core.collater import CollatedBatch
 
@@ -21,13 +21,13 @@ class Backend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def to_tensor(self, array: np.ndarray) -> Any:
-        """Convert a NumPy array to a framework tensor."""
+    def to_tensor(self, array: GrumpyArray) -> Any:
+        """Convert a Grumpy array to a framework tensor."""
         raise NotImplementedError
 
     @abstractmethod
-    def to_numpy(self, tensor: Any) -> np.ndarray:
-        """Convert a framework tensor back to NumPy."""
+    def to_grumpy(self, tensor: Any) -> GrumpyArray:
+        """Convert a framework tensor back to a Grumpy array."""
         raise NotImplementedError
 
     @abstractmethod
@@ -36,7 +36,7 @@ class Backend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def eval_step(self, model: Any, batch: CollatedBatch) -> tuple[float, np.ndarray]:
+    def eval_step(self, model: Any, batch: CollatedBatch) -> tuple[float, GrumpyArray]:
         """Execute one evaluation step and return loss and predictions."""
         raise NotImplementedError
 

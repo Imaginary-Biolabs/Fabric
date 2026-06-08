@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any
 
+import grumpy as gr
 import numpy as np
+from grumpy import GrumpyArray
 
 from fabric.core.backend import Backend
 from fabric.core.collater import CollatedBatch
@@ -69,14 +72,12 @@ class TensorflowBackend(Backend):
         _require_model_optimizer(model)
         return model
 
-    def to_tensor(self, array: np.ndarray) -> Any:
-        tf = _require_tensorflow()
+    def to_tensor(self, array: GrumpyArray) -> Any:
         self._init_runtime()
-        return tf.convert_to_tensor(array, dtype=tf.float32)
+        return array.to_tensorflow()
 
-    def to_numpy(self, tensor: Any) -> np.ndarray:
-        self._init_runtime()
-        return np.asarray(tensor.numpy(), dtype=np.float32)
+    def to_grumpy(self, tensor: Any) -> GrumpyArray:
+        return gr.from_tensorflow(tensor, dtype=gr.float32)
 
     def _predict(self, model: Any, features: Any) -> Any:
         tf = self._tf
@@ -95,7 +96,7 @@ class TensorflowBackend(Backend):
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
         value = float(loss.numpy())
-        if np.isnan(value):
+        if math.isnan(value):
             raise BackendError("Training step produced NaN loss")
         return value
 
@@ -106,7 +107,7 @@ class TensorflowBackend(Backend):
         targets = self.to_tensor(batch.y)
         predictions = self._predict(model, features)
         loss = tf.reduce_mean(tf.square(predictions - targets))
-        return float(loss.numpy()), self.to_numpy(predictions)
+        return float(loss.numpy()), self.to_grumpy(predictions)
 
     def save_checkpoint(
         self,
