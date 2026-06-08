@@ -70,6 +70,27 @@ class MetricError(FabricError):
     """Metric state or computation error."""
 
 
+class CollateError(FabricError):
+    """Batch collation error."""
+
+
+class BackendError(FabricError):
+    """Deep learning backend configuration or execution error."""
+
+
+class TrainerError(FabricError):
+    """Trainer configuration or loop error."""
+
+
+class BackendExtraRequired(FabricError):
+    """Optional backend dependencies are not installed."""
+
+    def __init__(self, extra: str) -> None:
+        super().__init__(
+            f"Backend features require the {extra} extra: pip install 'imaginary-fabric[{extra}]'"
+        )
+
+
 class PlatformExtraRequired(FabricError):
     """Optional platform dependencies are not installed.
 

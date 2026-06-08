@@ -2,7 +2,10 @@
 
 from fabric.utils.config import load_config
 from fabric.utils.errors import (
+    BackendError,
+    BackendExtraRequired,
     BenchmarkError,
+    CollateError,
     ConfigError,
     ConfigurationError,
     DatasetError,
@@ -14,13 +17,17 @@ from fabric.utils.errors import (
     SamplerError,
     SchemaError,
     TaskError,
+    TrainerError,
     TransformError,
 )
 from fabric.utils.hashing import config_hash
 from fabric.utils.settings import Settings
 
 __all__ = [
+    "BackendError",
+    "BackendExtraRequired",
     "BenchmarkError",
+    "CollateError",
     "ConfigError",
     "ConfigurationError",
     "DatasetError",
@@ -32,6 +39,7 @@ __all__ = [
     "SamplerError",
     "SchemaError",
     "TaskError",
+    "TrainerError",
     "TransformError",
     "Settings",
     "config_hash",

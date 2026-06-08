@@ -1,0 +1,44 @@
+from __future__ import annotations
+
+import numpy as np
+from grumpy import GrumpyArray
+
+from fabric.core.collater import CollatedBatch, Collater
+from fabric.core.collaters._features import extract_feature_matrix
+from fabric.core.data import Data
+from fabric.utils.errors import CollateError
+
+
+class WideCollater(Collater):
+    """Pad-free rectangular collater for per-scene scalar features.
+
+    Args:
+        features: Builtin counts such as ``residue_count`` or scalar dataframe
+            columns available in the batch.
+
+    Example:
+        >>> collater = WideCollater(features=["residue_count", "atom_count"])
+        >>> batch = collater.collate(X, y)
+    """
+
+    name = "WideCollater"
+
+    def __init__(self, features: list[str]) -> None:
+        self.features = [str(name) for name in features]
+
+    def collate(self, X: tuple[Data, ...], y: GrumpyArray | None) -> CollatedBatch:
+        """Build a dense feature matrix for one loader batch."""
+        if not X:
+            raise CollateError("Collater received empty inputs")
+        data = X[0]
+        features = extract_feature_matrix(data, self.features)
+        if y is None:
+            targets = np.zeros((features.shape[0],), dtype=np.float32)
+        else:
+            targets = np.asarray(y.to_list(), dtype=np.float32).reshape(-1)
+        if targets.shape[0] != features.shape[0]:
+            raise CollateError(
+                f"Feature batch size {features.shape[0]} does not match target size "
+                f"{targets.shape[0]}"
+            )
+        return CollatedBatch(features=features, y=targets)

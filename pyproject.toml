@@ -35,8 +35,18 @@ platform = [
   "imaginary-fabric[core]",
   "httpx>=0.27",
 ]
+torch = [
+  "imaginary-fabric[core]",
+  "torch>=2.0",
+  "lightning>=2.0",
+]
+tensorflow = [
+  "imaginary-fabric[core]",
+  "tensorflow>=2.12",
+]
 dev = [
   "imaginary-fabric[core]",
+  "imaginary-fabric[torch]",
   "pytest>=7",
   "ruff>=0.4",
 ]
