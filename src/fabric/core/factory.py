@@ -19,6 +19,7 @@ from fabric.core.trainer import Trainer
 from fabric.core.workflow import Workflow
 from fabric.utils.config import load_config
 from fabric.utils.errors import ConfigError
+from fabric.utils.settings import Settings
 
 
 class Factory:
@@ -50,6 +51,7 @@ class Factory:
             return path
         candidates = [
             Path.cwd() / "tests/fixtures/datasets" / f"{path_or_id}.yaml",
+            Settings.registry_cache_path() / str(path_or_id) / "1" / "config.yaml",
             Path.cwd() / "tests/fixtures/configs" / f"{path_or_id}.yaml",
             Path.cwd() / f"{path_or_id}.yaml",
         ]
@@ -98,6 +100,7 @@ class Factory:
             return path
         candidates = [
             Path.cwd() / "tests/fixtures/benchmarks" / f"{path_or_id}.yaml",
+            Settings.registry_cache_path() / str(path_or_id) / "1" / "config.yaml",
             Path.cwd() / "tests/fixtures/configs" / f"{path_or_id}.yaml",
             Path.cwd() / f"{path_or_id}.yaml",
         ]
@@ -139,6 +142,7 @@ class Factory:
             return path
         candidates = [
             Path.cwd() / "tests/fixtures" / subdir / f"{path_or_id}.yaml",
+            Settings.registry_cache_path() / str(path_or_id) / "1" / "config.yaml",
             Path.cwd() / "tests/fixtures/configs" / f"{path_or_id}.yaml",
             Path.cwd() / f"{path_or_id}.yaml",
         ]

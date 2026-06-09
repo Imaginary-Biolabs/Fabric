@@ -20,7 +20,7 @@ from fabric.cli.console import (
 )
 from fabric.core.factory import Factory
 from fabric.core.runner import Runner
-from fabric.utils.errors import FabricError, PlatformExtraRequired
+from fabric.utils.errors import FabricError
 
 app = typer.Typer(
     name="imaginary",
@@ -343,22 +343,130 @@ def workflow_run_cmd(
 
 @platform_app.command("status")
 def platform_status_cmd() -> None:
-    """Show platform integration status."""
-    info_panel(
-        "Imaginary Platform commands (upload, jobs, remote runner) ship in Phase 8.\n"
-        "Install with: [bold]pip install 'imaginary-fabric[platform]'[/]",
-        title="platform",
-    )
+    """Show platform API connectivity."""
+    from fabric.platform.client import PlatformClient
 
-
-@platform_app.command("upload")
-def platform_upload_cmd() -> None:
-    """Upload releases or checkpoints to Imaginary (Phase 8 stub)."""
     try:
-        raise PlatformExtraRequired()
+        client = PlatformClient()
+        health = client.request("GET", "/health")
+        info_panel(
+            f"Connected to [bold]{client.base_url}[/]\n"
+            f"API version: {health.get('api_version', 'unknown')}",
+            title="platform",
+        )
     except FabricError as exc:
         print_error(str(exc))
         raise typer.Exit(code=1) from exc
+
+
+upload_app = typer.Typer(name="upload", help="Upload dataset releases and model checkpoints.")
+job_app = typer.Typer(name="job", help="Submit and monitor platform jobs.")
+
+
+@upload_app.command("release")
+def platform_upload_release_cmd(
+    asset: Annotated[str, typer.Option("--asset", "-a", help="Dataset asset id, e.g. D_000001")],
+    version: Annotated[str, typer.Option("--version", "-v", help="Asset version")] = "1",
+    path: Annotated[Path, typer.Option("--path", "-p", help="Released Zarr directory")] = ...,
+) -> None:
+    """Upload a Grumpy Zarr release directory."""
+    from fabric.platform.upload import upload_release
+
+    try:
+        manifest = upload_release(asset_id=asset, version=version, path=path)
+        success_panel(
+            "upload complete",
+            [
+                ("kind", "dataset_release"),
+                ("asset", asset),
+                ("version", version),
+                ("manifest_id", str(manifest.get("id", "—"))),
+                ("objects", str(manifest.get("object_count", "—"))),
+            ],
+        )
+    except FabricError as exc:
+        print_error(str(exc))
+        raise typer.Exit(code=1) from exc
+
+
+@upload_app.command("checkpoint")
+def platform_upload_checkpoint_cmd(
+    asset: Annotated[str, typer.Option("--asset", "-a", help="Model asset id, e.g. M_000003")],
+    version: Annotated[str, typer.Option("--version", "-v", help="Asset version")] = "1",
+    path: Annotated[Path, typer.Option("--path", "-p", help="Checkpoint .pt or directory")] = ...,
+) -> None:
+    """Upload a model checkpoint.pt manifest."""
+    from fabric.platform.upload import upload_checkpoint
+
+    try:
+        manifest = upload_checkpoint(asset_id=asset, version=version, path=path)
+        success_panel(
+            "upload complete",
+            [
+                ("kind", "model_checkpoint"),
+                ("asset", asset),
+                ("version", version),
+                ("manifest_id", str(manifest.get("id", "—"))),
+            ],
+        )
+    except FabricError as exc:
+        print_error(str(exc))
+        raise typer.Exit(code=1) from exc
+
+
+@job_app.command("submit")
+def platform_job_submit_cmd(
+    benchmark: Annotated[str, typer.Option("--benchmark", "-b")],
+    model: Annotated[str, typer.Option("--model", "-m")],
+    benchmark_version: Annotated[str, typer.Option("--benchmark-version")] = "1",
+    model_version: Annotated[str, typer.Option("--model-version")] = "1",
+    batch_size: Annotated[int, typer.Option("--batch-size")] = 8,
+) -> None:
+    """Submit a benchmark_eval job."""
+    from fabric.platform.jobs import submit_benchmark_eval
+
+    try:
+        job = submit_benchmark_eval(
+            benchmark_id=benchmark,
+            benchmark_version=benchmark_version,
+            model_id=model,
+            model_version=model_version,
+            overrides={"batch_size": batch_size, "split": "test"},
+        )
+        success_panel(
+            "job submitted",
+            [
+                ("job_id", job["id"]),
+                ("status", job["status"]),
+                ("type", job["type"]),
+            ],
+        )
+    except FabricError as exc:
+        print_error(str(exc))
+        raise typer.Exit(code=1) from exc
+
+
+@job_app.command("status")
+def platform_job_status_cmd(
+    job_id: Annotated[str, typer.Argument(help="Job UUID")],
+    wait: Annotated[bool, typer.Option("--wait", help="Block until job completes.")] = False,
+) -> None:
+    """Get or wait for job status."""
+    from fabric.platform.jobs import get_job, wait_for_job
+
+    try:
+        job = wait_for_job(job_id) if wait else get_job(job_id)
+        rows = [("job_id", job_id), ("status", job["status"])]
+        if job.get("result"):
+            rows.append(("result", json.dumps(job["result"], sort_keys=True)))
+        success_panel("job status", rows)
+    except FabricError as exc:
+        print_error(str(exc))
+        raise typer.Exit(code=1) from exc
+
+
+platform_app.add_typer(upload_app)
+platform_app.add_typer(job_app)
 
 
 app.add_typer(workflow_app)

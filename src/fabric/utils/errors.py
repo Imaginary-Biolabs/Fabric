@@ -114,3 +114,19 @@ class PlatformExtraRequired(FabricError):
         super().__init__(
             "Platform features require the platform extra: pip install 'imaginary-fabric[platform]'"
         )
+
+
+class AuthError(FabricError):
+    """Platform authentication failed or credentials are missing."""
+
+
+class RegistryError(FabricError):
+    """Platform registry request failed."""
+
+
+class BlobError(FabricError):
+    """Platform blob upload or download failed."""
+
+
+class JobError(FabricError):
+    """Platform job submission or polling failed."""

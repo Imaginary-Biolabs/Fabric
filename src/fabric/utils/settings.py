@@ -190,9 +190,10 @@ class Settings(metaclass=_SettingsMeta):
         """Instance-scoped scratch path, if configured."""
         return self._scratch
 
-    def registry_cache_path(self) -> Path:
+    @classmethod
+    def registry_cache_path(cls) -> Path:
         """Directory for cached registry metadata (platform phase)."""
-        return self._active_home() / "registry"
+        return cls._active_home() / "registry"
 
     def __enter__(self) -> Settings:
         """Activate this settings instance for the current scope."""

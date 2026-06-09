@@ -20,6 +20,10 @@ from fabric.utils.errors import (
     TaskError,
     TrainerError,
     TransformError,
+    AuthError,
+    BlobError,
+    JobError,
+    RegistryError,
     WorkflowError,
 )
 from fabric.utils.hashing import config_hash
@@ -45,6 +49,10 @@ __all__ = [
     "TrainerError",
     "TransformError",
     "WorkflowError",
+    "AuthError",
+    "RegistryError",
+    "BlobError",
+    "JobError",
     "Settings",
     "config_hash",
     "load_config",
