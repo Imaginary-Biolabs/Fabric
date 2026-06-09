@@ -1,0 +1,14 @@
+id: W_platform
+schema_version: 1
+
+nodes:
+  diffuse:
+    op: platform
+    runtime: platform
+    node: M_rfdiffusion
+    inputs:
+      structure: input.pdb
+
+outputs:
+  designs:
+    from: diffuse.structures

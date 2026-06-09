@@ -1,0 +1,27 @@
+id: W_mini
+schema_version: 1
+
+inputs:
+  batch_size:
+    type: int
+    default: 4
+
+nodes:
+  eval_baseline:
+    op: eval
+    runtime: local
+    benchmark: B_mini
+    model: M_mini
+    collater:
+      WideCollater:
+        features: [residue_count, atom_count]
+    backend:
+      TorchBackend:
+        accelerator: cpu
+    inputs:
+      batch_size: $inputs.batch_size
+      split: test
+
+outputs:
+  metrics:
+    from: eval_baseline.metrics

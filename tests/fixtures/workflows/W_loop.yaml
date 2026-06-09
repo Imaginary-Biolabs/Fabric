@@ -1,0 +1,32 @@
+id: W_loop
+schema_version: 1
+
+inputs:
+  batch_size:
+    type: int
+    default: 2
+
+nodes:
+  repeat_eval:
+    op: loop
+    runtime: local
+    count: 2
+    body:
+      eval_inner:
+        op: eval
+        runtime: local
+        benchmark: B_mini
+        model: M_mini
+        collater:
+          WideCollater:
+            features: [residue_count, atom_count]
+        backend:
+          TorchBackend:
+            accelerator: cpu
+        inputs:
+          batch_size: $inputs.batch_size
+          split: test
+
+outputs:
+  metrics:
+    from: repeat_eval.last_metrics

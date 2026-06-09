@@ -20,6 +20,7 @@ from fabric.utils.errors import (
     TaskError,
     TrainerError,
     TransformError,
+    WorkflowError,
 )
 from fabric.utils.hashing import config_hash
 from fabric.utils.settings import Settings
@@ -43,6 +44,7 @@ __all__ = [
     "TaskError",
     "TrainerError",
     "TransformError",
+    "WorkflowError",
     "Settings",
     "config_hash",
     "load_config",

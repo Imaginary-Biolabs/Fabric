@@ -1,0 +1,18 @@
+id: W_cycle
+schema_version: 1
+
+nodes:
+  a:
+    op: value
+    runtime: local
+    outputs:
+      x: $nodes.b.outputs.y
+  b:
+    op: value
+    runtime: local
+    outputs:
+      y: $nodes.a.outputs.x
+
+outputs:
+  result:
+    from: a.x

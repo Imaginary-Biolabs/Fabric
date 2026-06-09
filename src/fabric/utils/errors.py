@@ -86,6 +86,14 @@ class ModelError(FabricError):
     """Model, layer, scaffold, or objective configuration error."""
 
 
+class WorkflowError(FabricError):
+    """Workflow specification, planning, or execution error."""
+
+
+class RunnerError(FabricError):
+    """Runner configuration or execution error."""
+
+
 class BackendExtraRequired(FabricError):
     """Optional backend dependencies are not installed."""
 

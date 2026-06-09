@@ -15,6 +15,7 @@ from fabric.core.dataset import Dataset
 from fabric.core.loggers import DiskLogger
 from fabric.core.models import attach_optimizer, build_model
 from fabric.core.trainer import Trainer
+from fabric.core.workflow import Workflow
 from fabric.utils.config import load_config
 from fabric.utils.errors import ConfigError
 
@@ -174,6 +175,17 @@ class Factory:
         model = build_model(cfg, collater=collater, input_dim=input_dim)
         attach_optimizer(model, cfg.get("optimizer"))
         return model
+
+    @staticmethod
+    def _resolve_workflow_path(path_or_id: str | Path) -> Path:
+        return Factory._resolve_config_path(path_or_id, kind="Workflow", subdir="workflows")
+
+    @staticmethod
+    def workflow(path_or_id: str | Path) -> Workflow:
+        """Load a workflow from a local YAML config."""
+        config_path = Factory._resolve_workflow_path(path_or_id)
+        cfg = load_config(config_path)
+        return Workflow(cfg, config_path=config_path)
 
     @staticmethod
     def _resolve_trainer_path(path_or_id: str | Path) -> Path:
