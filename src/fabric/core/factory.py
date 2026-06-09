@@ -14,6 +14,7 @@ from fabric.core.collaters import build_collater
 from fabric.core.dataset import Dataset
 from fabric.core.loggers import DiskLogger
 from fabric.core.models import attach_optimizer, build_model
+from fabric.core.result import Result
 from fabric.core.trainer import Trainer
 from fabric.core.workflow import Workflow
 from fabric.utils.config import load_config
@@ -229,3 +230,72 @@ class Factory:
             batch_size=int(payload.get("batch_size", 8)),
             progress=bool(payload.get("progress", False)),
         )
+
+    @staticmethod
+    def _default_collater(model_cfg: DictConfig) -> dict[str, Any]:
+        """Infer a collater mapping from model trainer defaults."""
+        defaults = model_cfg.get("trainer_defaults") or {}
+        collater_cfg = defaults.get("collater")
+        if isinstance(collater_cfg, dict):
+            return OmegaConf.to_container(collater_cfg, resolve=True) or {}
+        name = str(collater_cfg or "WideCollater")
+        if name == "WideCollater":
+            return {"WideCollater": {"features": ["residue_count", "atom_count"]}}
+        if name == "LongCollater":
+            return {"LongCollater": {"features": ["residue_count", "atom_count"]}}
+        raise ConfigError(
+            f"Model trainer_defaults collater '{name}' needs explicit params; "
+            "pass --train-config or extend trainer_defaults."
+        )
+
+    @staticmethod
+    def _default_backend(model_cfg: DictConfig) -> dict[str, Any]:
+        """Infer a backend mapping from model trainer defaults."""
+        defaults = model_cfg.get("trainer_defaults") or {}
+        backend_cfg = defaults.get("backend")
+        if isinstance(backend_cfg, dict):
+            return OmegaConf.to_container(backend_cfg, resolve=True) or {}
+        name = str(backend_cfg or "TorchBackend")
+        return {name: {"accelerator": "cpu"}}
+
+    @staticmethod
+    def eval(
+        benchmark_ref: str | Path,
+        model_ref: str | Path,
+        *,
+        checkpoint: str | Path | None = None,
+        collater: Any = None,
+        backend: Any = None,
+        split: str = "test",
+        batch_size: int = 8,
+        progress: bool = False,
+        name: str | None = None,
+    ) -> Result:
+        """Evaluate a model on a benchmark split and return metrics."""
+        import grumpy as gr
+
+        benchmark = Factory.benchmark(benchmark_ref)
+        model_cfg = load_config(Factory._resolve_model_path(model_ref))
+        collater_cfg = collater if collater is not None else Factory._default_collater(model_cfg)
+        backend_cfg = backend if backend is not None else Factory._default_backend(model_cfg)
+
+        collater_obj = build_collater(collater_cfg)
+        model = build_model(model_cfg, collater=collater_obj)
+        attach_optimizer(model, model_cfg.get("optimizer"))
+        backend_obj = build_backend(backend_cfg)
+        model = backend_obj.setup(model)
+        if checkpoint is not None:
+            backend_obj.load_checkpoint(str(checkpoint), model=model)
+
+        benchmark.metrics.reset()
+        loader_name = f"{split}_loader"
+        if not hasattr(benchmark, loader_name):
+            raise ConfigError(f"Benchmark split '{split}' is not available")
+        loader = getattr(benchmark, loader_name)(batch_size=batch_size, progress=progress)
+        for X, y in loader:
+            batch = collater_obj.collate(X, y)
+            _, predictions = backend_obj.eval_step(model, batch)
+            benchmark.update(predictions.astype(gr.float64), y)
+        metrics = benchmark.metrics.compute_all()
+        label = name or str(model_cfg.get("id") or model_ref)
+        return Result(name=label, metrics=metrics)

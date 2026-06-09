@@ -9,6 +9,8 @@ from typing import Any
 from rich.console import Console
 from rich.table import Table
 
+from fabric.utils.constants import BRAND_GREEN_DARK, BRAND_GREEN_LIGHT, BRAND_INK_600
+
 _console = Console(stderr=True)
 
 
@@ -50,9 +52,13 @@ class Result:
 
     def to_rich(self) -> None:
         """Print a Rich table to stderr."""
-        table = Table(title=f"fabric result: {self.name}")
-        table.add_column("metric")
-        table.add_column("value", justify="right")
+        table = Table(
+            title=f"[bold {BRAND_GREEN_DARK}]eval · {self.name}[/]",
+            header_style=f"bold {BRAND_INK_600}",
+            border_style=BRAND_GREEN_DARK,
+        )
+        table.add_column("metric", style=BRAND_INK_600)
+        table.add_column("value", justify="right", style=BRAND_GREEN_LIGHT)
         for key in sorted(self.metrics):
             table.add_row(key, f"{self.metrics[key]:.6g}")
         _console.print(table)
