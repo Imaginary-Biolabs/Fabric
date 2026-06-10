@@ -1,4 +1,8 @@
-from __future__ import annotations
+"""Sequence-length filter transform for dataset releases.
+
+Drops scenes whose longest chain exceeds a residue-count threshold and remaps
+split indices to retained scenes.
+"""
 
 from collections.abc import Iterator
 from typing import Any

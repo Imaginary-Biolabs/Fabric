@@ -1,3 +1,8 @@
+"""Workflow node executor for fixed-count iteration.
+
+Repeats a nested body of nodes and exposes per-iteration and last-iteration outputs.
+"""
+
 from __future__ import annotations
 
 from typing import Any

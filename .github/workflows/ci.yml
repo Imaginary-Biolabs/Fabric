@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -25,10 +28,39 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -d grumpy ]; then pip install -e grumpy; fi
-          pip install -e ".[dev]"
+          pip install -e ".[dev,platform]"
 
       - name: Ruff
         run: ruff check src tests
 
-      - name: Phase 1 tolls
-        run: pytest tests/tolls/test_phase_1.py -x --tb=short -q
+      - name: Phase tolls with coverage
+        run: |
+          pytest tests/tolls/ -x --tb=short -q \
+            --cov=fabric --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: Imaginary-Biolabs/fabric
+          files: coverage.xml
+          verbose: true
+          fail_ci_if_error: false
+
+  docs:
+    name: Docs strict build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install docs dependencies
+        run: |
+          python -m pip install -U pip
+          pip install -e ".[docs]"
+
+      - name: Build MkDocs site
+        run: mkdocs build --strict

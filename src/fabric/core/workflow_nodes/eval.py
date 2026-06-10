@@ -1,3 +1,8 @@
+"""Workflow node executor for benchmark evaluation.
+
+Runs a configured model against a benchmark split and records metric outputs.
+"""
+
 from __future__ import annotations
 
 from typing import Any

@@ -1,0 +1,134 @@
+site_name: Fabric
+site_description: Python orchestration for molecular ML on Grumpy
+site_url: https://imaginary-biolabs.github.io/fabric/
+repo_url: https://github.com/Imaginary-Biolabs/fabric
+repo_name: Imaginary-Biolabs/fabric
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  logo: assets/fabric_icon.svg
+  favicon: assets/fabric_favicon.svg
+  font:
+    text: IBM Plex Sans
+    code: IBM Plex Mono
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: imaginary
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: imaginary-dark
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.sections
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - getting-started/installation.md
+      - getting-started/quickstart.md
+      - getting-started/project-layout.md
+  - Concepts:
+      - concepts/data-model.md
+      - concepts/configs.md
+      - concepts/datasets.md
+      - concepts/transforms.md
+      - concepts/benchmarks.md
+      - concepts/models-and-training.md
+      - concepts/workflows.md
+  - Guides:
+      - guides/release-a-dataset.md
+      - guides/train-a-model.md
+      - guides/run-a-benchmark-locally.md
+      - guides/extend-fabric.md
+  - Platform:
+      - platform/overview.md
+      - platform/authentication.md
+      - platform/registry.md
+      - platform/uploads.md
+      - platform/jobs.md
+  - CLI: cli/commands.md
+  - Reference:
+      - reference/config-schemas.md
+      - reference/api.md
+  - Developer:
+      - developer/architecture.md
+      - developer/testing.md
+      - developer/contributing.md
+
+extra_css:
+  - stylesheets/imaginary.css
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Imaginary-Biolabs/fabric
+    - icon: fontawesome/solid/globe
+      link: https://www.imaginary.bio
+
+copyright: Copyright &copy; 2026 Imaginary Biolabs GmbH
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+      use_pygments: true
+  - pymdownx.superfences
+  - pymdownx.snippets:
+      check_paths: true
+      base_path: ["."]
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: numpy
+            show_source: false
+            merge_init_into_class: true
+            show_signature_annotations: true
+            separate_signature: true
+            show_if_no_docstring: true
+            show_root_toc_entry: false
+            allow_inspection: true
+            preload_modules:
+              - fabric
+              - fabric.core.factory
+              - fabric.core.dataset
+              - fabric.core.benchmark
+              - fabric.core.trainer
+              - fabric.core.workflow
+              - fabric.core.runner
+              - fabric.utils.settings
+
+validation:
+  links:
+    not_found: ignore
+    unrecognized_links: ignore
+
+strict: true
+
+hooks:
+  - docs/hooks.py

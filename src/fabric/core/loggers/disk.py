@@ -1,3 +1,8 @@
+"""Disk-backed training logger.
+
+Appends per-step losses and evaluation metrics to files under a run directory.
+"""
+
 from __future__ import annotations
 
 import json
@@ -12,6 +17,15 @@ class DiskLogger(Logger):
 
     Args:
         root: Directory for run artifacts.
+
+    Example:
+        >>> from pathlib import Path
+        >>> import tempfile
+        >>> with tempfile.TemporaryDirectory() as tmp:
+        ...     logger = DiskLogger(root=Path(tmp))
+        ...     logger.log_loss(0.42)
+        ...     (Path(tmp) / "train_loss.csv").exists()
+        True
     """
 
     name = "DiskLogger"

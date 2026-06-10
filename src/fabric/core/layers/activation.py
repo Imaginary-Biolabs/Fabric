@@ -1,3 +1,8 @@
+"""Activation layers for Fabric scaffolds.
+
+Registered layers map collated tensor slots through PyTorch modules.
+"""
+
 from __future__ import annotations
 
 from typing import Any
@@ -17,7 +22,13 @@ def _require_torch():
 
 
 class ReLULayer(Layer):
-    """ReLU activation on the ``features`` slot."""
+    """ReLU activation on the ``features`` slot.
+
+    Example:
+        >>> layer = ReLULayer()
+        >>> layer.reads
+        ('features',)
+    """
 
     name = "ReLU"
     reads = ("features",)

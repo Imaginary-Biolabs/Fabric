@@ -1,3 +1,9 @@
+"""PyTorch training backend for Fabric models.
+
+Converts Grumpy batches to torch tensors and runs train/eval steps with optional
+Lightning Fabric device management.
+"""
+
 from __future__ import annotations
 
 import math
@@ -39,6 +45,11 @@ class TorchBackend(Backend):
         accelerator: ``cpu``, ``cuda``, or ``gpu``.
         devices: Number of devices (Fabric-managed when Lightning is installed).
         precision: Fabric precision setting.
+
+    Example:
+        >>> backend = TorchBackend(accelerator="cpu")
+        >>> backend.name
+        'TorchBackend'
     """
 
     name = "TorchBackend"

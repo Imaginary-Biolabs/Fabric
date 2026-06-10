@@ -1,4 +1,7 @@
-from __future__ import annotations
+"""Molecule-level samplers for dataset split partitions.
+
+Yield batches of scene indices for Grumpy schema indexing.
+"""
 
 import random
 from collections.abc import Iterator

@@ -1,3 +1,8 @@
+"""Workflow node executor for pause and resume.
+
+Blocks a workflow until an external resume payload is supplied.
+"""
+
 from __future__ import annotations
 
 from typing import Any

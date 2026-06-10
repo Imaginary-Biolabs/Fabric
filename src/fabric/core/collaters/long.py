@@ -1,3 +1,9 @@
+"""Long-layout collater for scene-indexed batches.
+
+Builds rectangular feature matrices with per-row ``scene_index`` metadata for
+graph-style backends.
+"""
+
 from __future__ import annotations
 
 import grumpy as gr
@@ -18,6 +24,11 @@ class LongCollater(Collater):
 
     Args:
         features: Builtin counts or scalar dataframe columns.
+
+    Example:
+        >>> collater = LongCollater(features=["residue_count"])
+        >>> collater.spec.layout
+        'long'
     """
 
     name = "LongCollater"

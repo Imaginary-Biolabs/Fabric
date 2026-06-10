@@ -1,4 +1,7 @@
-from __future__ import annotations
+"""Identity transform for dataset release pipelines.
+
+Passes batches through unchanged; used when a config omits explicit transforms.
+"""
 
 from fabric.core.transform import Transform
 

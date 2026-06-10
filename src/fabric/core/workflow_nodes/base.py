@@ -24,11 +24,41 @@ class NodeExecutor(ABC):
 
 
 def register_executor(cls: type[NodeExecutor]) -> type[NodeExecutor]:
+    """Register a node executor class under its ``op`` name.
+
+    Intended for use as a class decorator on :class:`NodeExecutor` subclasses.
+
+    Args:
+        cls: Executor class with a unique ``op`` attribute.
+
+    Returns:
+        The same class, unchanged.
+
+    Example:
+        >>> "value" in NODE_REGISTRY
+        True
+    """
     NODE_REGISTRY[cls.op] = cls
     return cls
 
 
 def get_executor(op: str) -> NodeExecutor:
+    """Return a fresh executor instance for a workflow operation name.
+
+    Args:
+        op: Operation key (for example ``"train"``, ``"eval"``).
+
+    Returns:
+        New :class:`NodeExecutor` instance.
+
+    Raises:
+        WorkflowError: If ``op`` is not registered.
+
+    Example:
+        >>> executor = get_executor("value")
+        >>> executor.op
+        'value'
+    """
     cls = NODE_REGISTRY.get(op)
     if cls is None:
         available = ", ".join(sorted(NODE_REGISTRY))

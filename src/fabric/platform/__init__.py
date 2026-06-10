@@ -14,7 +14,7 @@ import importlib
 
 from fabric.utils.errors import PlatformExtraRequired
 
-__all__ = ["auth", "registry", "upload", "jobs"]
+__all__ = ["auth", "client", "registry", "upload", "jobs"]
 
 
 def __getattr__(name: str):

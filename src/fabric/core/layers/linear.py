@@ -1,3 +1,8 @@
+"""Linear layers for Fabric scaffolds.
+
+Build dense affine maps on the ``features`` slot from YAML layer configs.
+"""
+
 from __future__ import annotations
 
 from typing import Any
@@ -17,7 +22,12 @@ def _require_torch():
 
 
 class LinearLayer(Layer):
-    """Dense affine map on the ``features`` slot."""
+    """Dense affine map on the ``features`` slot.
+
+    Example:
+        >>> layer = LinearLayer()
+        >>> layer.build(in_features=4, out_features=2)  # doctest: +SKIP
+    """
 
     name = "Linear"
     reads = ("features",)

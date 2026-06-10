@@ -51,12 +51,21 @@ tensorflow = [
 dev = [
   "imaginary-fabric[core]",
   "imaginary-fabric[torch]",
+  "imaginary-fabric[platform]",
   "pytest>=7",
+  "pytest-cov>=4",
   "ruff>=0.4",
+]
+docs = [
+  "imaginary-fabric[core]",
+  "mkdocs>=1.5,<2",
+  "mkdocs-material>=9,<10",
+  "mkdocstrings[python]>=0.27",
 ]
 
 [project.urls]
 Homepage = "https://github.com/Imaginary-Biolabs/fabric"
+Documentation = "https://imaginary-biolabs.github.io/fabric/"
 Repository = "https://github.com/Imaginary-Biolabs/fabric"
 Issues = "https://github.com/Imaginary-Biolabs/fabric/issues"
 

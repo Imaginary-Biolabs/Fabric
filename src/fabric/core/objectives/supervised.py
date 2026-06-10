@@ -1,4 +1,7 @@
-from __future__ import annotations
+"""Supervised regression objectives for Fabric models.
+
+Compute backend-specific losses between model predictions and batch targets.
+"""
 
 from typing import Any
 
@@ -12,6 +15,11 @@ class SupervisedObjective(Objective):
 
     Args:
         loss: Supported value is ``'mse'``.
+
+    Example:
+        >>> objective = SupervisedObjective(loss="mse")
+        >>> objective.loss_name
+        'mse'
     """
 
     name = "SupervisedObjective"

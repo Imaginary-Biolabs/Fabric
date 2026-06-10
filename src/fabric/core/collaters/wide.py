@@ -1,3 +1,8 @@
+"""Wide-layout collater for pad-free rectangular batches.
+
+Stacks per-scene scalar features into a dense feature matrix without padding.
+"""
+
 from __future__ import annotations
 
 import grumpy as gr

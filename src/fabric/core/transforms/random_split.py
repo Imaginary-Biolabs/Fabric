@@ -1,4 +1,7 @@
-from __future__ import annotations
+"""Random train/val/test split transform.
+
+Assigns shuffled scene indices to named partition schemes on a dataset release.
+"""
 
 import random
 from typing import Any

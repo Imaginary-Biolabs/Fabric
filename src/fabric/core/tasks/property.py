@@ -1,4 +1,7 @@
-from __future__ import annotations
+"""Property prediction tasks for supervised learning.
+
+Extract structural inputs and scalar targets from dataset assets.
+"""
 
 from typing import Any
 

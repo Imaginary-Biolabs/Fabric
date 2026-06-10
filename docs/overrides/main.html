@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block htmltitle %}
+  {%- if page.meta and page.meta.title -%}
+    <title>{{ page.meta.title }} · {{ config.site_name }}</title>
+  {%- elif page.title and not page.is_homepage -%}
+    <title>{{ page.title | striptags }} · {{ config.site_name }}</title>
+  {%- else -%}
+    <title>{{ config.site_name }}</title>
+  {%- endif -%}
+{% endblock %}
+
+{% block content %}
+  {% if page.is_homepage %}
+  {% set tagline_parts = config.site_description.split(" on ", 1) %}
+  <header class="gr-home-hero">
+    <div class="gr-home-mark" aria-hidden="true">
+      <img
+        class="gr-brand-mark gr-brand-mark--page gr-brand-mark--on-light"
+        src="{{ 'assets/fabric_logo_vertical_light.svg' | url }}"
+        alt=""
+      />
+      <img
+        class="gr-brand-mark gr-brand-mark--page gr-brand-mark--on-dark"
+        src="{{ 'assets/fabric_logo_vertical_dark.svg' | url }}"
+        alt=""
+      />
+    </div>
+    <p class="gr-home-tagline">
+      <span>{{ tagline_parts[0] }}</span>
+      {% if tagline_parts | length > 1 %}
+      <span>on {{ tagline_parts[1] }}</span>
+      {% endif %}
+    </p>
+    <p class="gr-home-lead">
+      <strong>Fabric</strong> is the Python orchestration layer for molecular machine learning on
+      <a href="https://imaginary-biolabs.github.io/Grumpy/">Grumpy</a> — config-driven datasets,
+      benchmarks, training, workflows, and optional Imaginary platform integration.
+    </p>
+  </header>
+  {% endif %}
+  {{ super() }}
+{% endblock %}

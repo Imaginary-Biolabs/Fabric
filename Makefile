@@ -11,6 +11,14 @@ lint:
 test:
 	pytest tests/tolls/test_phase_1.py tests/tolls/test_phase_2.py tests/tolls/test_phase_3.py tests/tolls/test_metrics.py tests/tolls/test_phase_4.py tests/tolls/test_phase_5.py tests/tolls/test_phase_6.py tests/tolls/test_phase_7.py tests/tolls/test_phase_8.py -x --tb=short -q
 
+docs:
+	python -m pip install -e ".[docs]"
+	mkdocs build --strict
+
+docs-serve:
+	python -m pip install -e ".[docs]"
+	mkdocs serve
+
 build:
 	python -m pip install --upgrade build
 	python -m build

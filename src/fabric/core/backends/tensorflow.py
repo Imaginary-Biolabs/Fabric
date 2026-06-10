@@ -1,3 +1,9 @@
+"""TensorFlow training backend for Fabric models.
+
+Uses ``GradientTape`` for training steps and converts Grumpy batches to
+TensorFlow tensors.
+"""
+
 from __future__ import annotations
 
 import math
@@ -38,6 +44,11 @@ class TensorflowBackend(Backend):
 
     Args:
         accelerator: ``cpu`` or ``gpu``.
+
+    Example:
+        >>> backend = TensorflowBackend(accelerator="cpu")
+        >>> backend.name
+        'TensorflowBackend'
     """
 
     name = "TensorflowBackend"

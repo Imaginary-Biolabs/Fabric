@@ -1,3 +1,8 @@
+"""Workflow node executor for static values.
+
+Materializes literal or referenced values as node outputs without side effects.
+"""
+
 from __future__ import annotations
 
 from typing import Any

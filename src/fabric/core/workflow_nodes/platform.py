@@ -1,3 +1,9 @@
+"""Workflow node executor for remote platform operations.
+
+Delegates proprietary or hosted nodes to the platform runtime when the runner
+mode is ``hybrid`` or ``remote``.
+"""
+
 from __future__ import annotations
 
 from typing import Any

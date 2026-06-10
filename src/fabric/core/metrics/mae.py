@@ -1,4 +1,4 @@
-from __future__ import annotations
+"""Mean absolute error metric for benchmark evaluation."""
 
 import grumpy as gr
 from grumpy import GrumpyArray

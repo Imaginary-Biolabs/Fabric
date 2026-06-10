@@ -1,4 +1,7 @@
-from __future__ import annotations
+"""Multi-layer perceptron scaffold for flat feature batches.
+
+Builds a sequential PyTorch network on the ``features`` collater slot.
+"""
 
 from typing import Any
 
@@ -37,6 +40,10 @@ class MLPScaffold(Scaffold):
         hidden: Hidden layer widths when ``layers`` is omitted.
         layers: Optional explicit layer stack from the layer registry.
         output_dim: Output width for the final prediction head.
+
+    Example:
+        >>> scaffold = MLPScaffold(hidden=[32, 16])
+        >>> scaffold.build(input_dim=8)  # doctest: +SKIP
     """
 
     name = "MLPScaffold"
