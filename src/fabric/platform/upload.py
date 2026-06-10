@@ -65,7 +65,11 @@ def upload_tree(
     batch_size = 100
     for offset in range(0, len(rel_paths), batch_size):
         batch = rel_paths[offset : offset + batch_size]
-        presign = client.request("POST", f"/blobs/sessions/{session_id}/presign", json={"paths": batch})
+        presign = client.request(
+            "POST",
+            f"/blobs/sessions/{session_id}/presign",
+            json={"paths": batch},
+        )
         uploads = {item["path"]: item["url"] for item in presign["uploads"]}
         for rel in batch:
             file_path = root / rel
@@ -77,7 +81,9 @@ def upload_tree(
             if put.status_code >= 400:
                 raise BlobError(f"Upload failed for {rel}: {put.status_code}")
             etag = put.headers.get("etag", "").strip('"')
-            complete_objects.append({"path": rel, "etag": etag or "unknown", "size_bytes": len(data)})
+            complete_objects.append(
+                {"path": rel, "etag": etag or "unknown", "size_bytes": len(data)}
+            )
     manifest = client.request(
         "POST",
         f"/blobs/sessions/{session_id}/complete",
@@ -100,7 +106,12 @@ def upload_release(*, asset_id: str, version: str, path: str | Path) -> dict[str
     Example:
         >>> # upload_release(asset_id="D_mini", version="1", path="release/")  # doctest: +SKIP
     """
-    return upload_tree(asset_id=asset_id, version=str(version), kind="dataset_release", root=Path(path))
+    return upload_tree(
+        asset_id=asset_id,
+        version=str(version),
+        kind="dataset_release",
+        root=Path(path),
+    )
 
 
 def upload_checkpoint(*, asset_id: str, version: str, path: str | Path) -> dict[str, Any]:
@@ -125,7 +136,17 @@ def upload_checkpoint(*, asset_id: str, version: str, path: str | Path) -> dict[
     if root.is_file():
         if root.name != "checkpoint.pt":
             raise BlobError("Checkpoint upload expects checkpoint.pt or a directory containing it")
-        return upload_tree(asset_id=asset_id, version=str(version), kind="model_checkpoint", root=root.parent)
+        return upload_tree(
+            asset_id=asset_id,
+            version=str(version),
+            kind="model_checkpoint",
+            root=root.parent,
+        )
     if (root / "checkpoint.pt").is_file():
-        return upload_tree(asset_id=asset_id, version=str(version), kind="model_checkpoint", root=root)
+        return upload_tree(
+            asset_id=asset_id,
+            version=str(version),
+            kind="model_checkpoint",
+            root=root,
+        )
     raise BlobError(f"No checkpoint.pt found under {root}")

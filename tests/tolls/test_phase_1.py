@@ -97,7 +97,6 @@ def test_compose_hash_order() -> None:
 
 def test_platform_extra_required(monkeypatch: pytest.MonkeyPatch) -> None:
     import builtins
-
     import sys
 
     real_import = builtins.__import__
@@ -109,7 +108,6 @@ def test_platform_extra_required(monkeypatch: pytest.MonkeyPatch) -> None:
         return real_import(name, *args, **kwargs)
 
     monkeypatch.setattr(builtins, "__import__", mock_import)
-    importlib = __import__("importlib")
     if "fabric.platform" in sys.modules:
         monkeypatch.delitem(sys.modules, "fabric.platform", raising=False)
 

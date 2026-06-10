@@ -104,7 +104,8 @@ def wait_for_job(
         job = get_job(job_id)
         if job["status"] in {"succeeded", "failed", "cancelled"}:
             if job["status"] != "succeeded":
-                raise JobError(job.get("error_message") or f"Job {job_id} ended with {job['status']}")
+                message = job.get("error_message") or f"Job {job_id} ended with {job['status']}"
+                raise JobError(message)
             return job
         time.sleep(poll_s)
     raise JobError(f"Timed out waiting for job {job_id}")

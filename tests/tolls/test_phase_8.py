@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from unittest.mock import patch
 
 import httpx
@@ -16,7 +15,6 @@ from fabric.utils.errors import AuthError
 def test_api_key_required(tmp_path, monkeypatch) -> None:
     monkeypatch.delenv("IMAGINARY_API_KEY", raising=False)
     monkeypatch.delenv("IMAGINARY_API_BASE", raising=False)
-    cred = tmp_path / "credentials.yaml"
     monkeypatch.setattr("fabric.platform.client.Path.home", lambda: tmp_path)
     with pytest.raises(AuthError):
         PlatformClient()
@@ -38,7 +36,8 @@ def test_fetch_asset_version_caches(tmp_path, monkeypatch) -> None:
         instance = mock_client.return_value
         instance.__enter__.return_value = instance
         instance.request.return_value = httpx.Response(200, json=payload)
-        with patch("fabric.platform.registry.Settings.registry_cache_path", return_value=tmp_path / "registry"):
+        cache_patch = "fabric.platform.registry.Settings.registry_cache_path"
+        with patch(cache_patch, return_value=tmp_path / "registry"):
             result = fetch_asset_version("B_000010", "1", cache=True)
     assert "split_scheme" in result["config_yaml"]
     cached = tmp_path / "registry" / "B_000010" / "1" / "config.yaml"
