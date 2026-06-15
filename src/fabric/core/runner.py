@@ -50,6 +50,7 @@ class Runner:
         *,
         inputs: dict[str, Any] | None = None,
         resume: dict[str, dict[str, Any]] | None = None,
+        platform_context: dict[str, Any] | None = None,
     ) -> RunRecord:
         """Compile and execute a workflow, returning a persisted run record."""
         plan = workflow.compile(run_inputs=inputs)
@@ -62,11 +63,14 @@ class Runner:
         record.inputs = dict(plan.inputs)
         record.status = "running"
 
+        pc = platform_context or {}
         ctx = ExecutionContext(
             plan=plan,
             mode=self.mode,
             root=self.root / record.run_id,
             remote_submit=self.remote_submit,
+            model_configs=dict(pc.get("model_configs") or {}),
+            on_step=pc.get("on_step"),
         )
         ctx.root.mkdir(parents=True, exist_ok=True)
 

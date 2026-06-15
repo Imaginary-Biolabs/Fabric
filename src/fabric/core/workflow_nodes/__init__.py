@@ -10,6 +10,7 @@ from fabric.core.workflow_nodes.context import ExecutionContext
 from fabric.core.workflow_nodes.eval import EvalExecutor
 from fabric.core.workflow_nodes.loop import LoopExecutor
 from fabric.core.workflow_nodes.platform import PlatformExecutor
+from fabric.core.workflow_nodes.predict import PredictExecutor
 from fabric.core.workflow_nodes.value import ValueExecutor
 from fabric.core.workflow_nodes.wait import WaitExecutor
 
@@ -20,6 +21,7 @@ __all__ = [
     "NODE_REGISTRY",
     "NodeExecutor",
     "PlatformExecutor",
+    "PredictExecutor",
     "ValueExecutor",
     "WaitExecutor",
     "get_executor",

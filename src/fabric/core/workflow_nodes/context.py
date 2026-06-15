@@ -19,6 +19,8 @@ class ExecutionContext:
     root: Path
     node_outputs: dict[str, dict[str, Any]] = field(default_factory=dict)
     remote_submit: Callable[[str, dict[str, Any], dict[str, Any]], dict[str, Any]] | None = None
+    model_configs: dict[str, dict[str, Any]] = field(default_factory=dict)
+    on_step: Callable[[str, dict[str, Any] | None], None] | None = None
 
     @property
     def inputs(self) -> dict[str, Any]:
@@ -26,3 +28,7 @@ class ExecutionContext:
 
     def resolve(self, value: Any) -> Any:
         return resolve_value(value, inputs=self.plan.inputs, node_outputs=self.node_outputs)
+
+    def emit_step(self, step_id: str, detail: dict[str, Any] | None = None) -> None:
+        if self.on_step is not None:
+            self.on_step(step_id, detail)
