@@ -319,7 +319,19 @@ def workflow_run_cmd(
 
     def _run() -> None:
         workflow = Factory.workflow(str(config))
-        run = Runner(mode=mode, root=root).run(workflow, inputs=_parse_set_pairs(set_))
+        if mode == "remote":
+            from fabric.platform.runner import run_workflow_remote
+
+            run = run_workflow_remote(workflow, inputs=_parse_set_pairs(set_), root=root)
+        else:
+            remote_submit = None
+            if mode in {"remote", "hybrid"}:
+                from fabric.platform.runner import make_remote_submit
+
+                remote_submit = make_remote_submit()
+            run = Runner(mode=mode, root=root, remote_submit=remote_submit).run(
+                workflow, inputs=_parse_set_pairs(set_)
+            )
         rows = [
             ("status", run.status),
             ("run_id", run.run_id),
@@ -361,6 +373,7 @@ def platform_status_cmd() -> None:
 
 upload_app = typer.Typer(name="upload", help="Upload dataset releases and model checkpoints.")
 job_app = typer.Typer(name="job", help="Submit and monitor platform jobs.")
+publish_app = typer.Typer(name="publish", help="Publish models and versions to the registry.")
 
 
 @upload_app.command("release")
@@ -416,31 +429,76 @@ def platform_upload_checkpoint_cmd(
 
 @job_app.command("submit")
 def platform_job_submit_cmd(
-    benchmark: Annotated[str, typer.Option("--benchmark", "-b")],
-    model: Annotated[str, typer.Option("--model", "-m")],
+    model: Annotated[str | None, typer.Option("--model", "-m", help="Model asset id for workflow_run")] = None,
+    mode: Annotated[str, typer.Option("--mode", help="workflow_run mode: run or develop")] = "run",
+    asset_version: Annotated[str, typer.Option("--asset-version", help="Model version")] = "1",
+    develop_profile: Annotated[
+        str | None, typer.Option("--develop-profile", help="Develop profile id")
+    ] = None,
+    inputs: Annotated[
+        str | None, typer.Option("--inputs", help="JSON object of run/develop inputs")
+    ] = None,
+    inputs_file: Annotated[
+        Path | None, typer.Option("--inputs-file", help="Path to JSON inputs file")
+    ] = None,
+    parameters: Annotated[
+        str | None, typer.Option("--parameters", help="JSON object of execution parameters")
+    ] = None,
+    wait: Annotated[bool, typer.Option("--wait", help="Block until job completes.")] = False,
+    benchmark: Annotated[
+        str | None, typer.Option("--benchmark", "-b", help="Benchmark id (legacy eval shim)")
+    ] = None,
     benchmark_version: Annotated[str, typer.Option("--benchmark-version")] = "1",
     model_version: Annotated[str, typer.Option("--model-version")] = "1",
     batch_size: Annotated[int, typer.Option("--batch-size")] = 8,
 ) -> None:
-    """Submit a benchmark_eval job."""
-    from fabric.platform.jobs import submit_benchmark_eval
+    """Submit a workflow_run job or legacy benchmark_eval shim."""
+    from fabric.platform.jobs import (
+        submit_benchmark_eval,
+        submit_workflow_run,
+        wait_for_job,
+    )
 
     try:
-        job = submit_benchmark_eval(
-            benchmark_id=benchmark,
-            benchmark_version=benchmark_version,
-            model_id=model,
-            model_version=model_version,
-            overrides={"batch_size": batch_size, "split": "test"},
-        )
-        success_panel(
-            "job submitted",
-            [
-                ("job_id", job["id"]),
-                ("status", job["status"]),
-                ("type", job["type"]),
-            ],
-        )
+        if benchmark:
+            if model is None:
+                raise typer.BadParameter("--model is required with --benchmark")
+            job = submit_benchmark_eval(
+                benchmark_id=benchmark,
+                benchmark_version=benchmark_version,
+                model_id=model,
+                model_version=model_version,
+                overrides={"batch_size": batch_size, "split": "test"},
+            )
+        elif model:
+            parsed_inputs: dict[str, Any] = {}
+            if inputs_file is not None:
+                parsed_inputs = json.loads(inputs_file.read_text())
+            elif inputs:
+                parsed_inputs = json.loads(inputs)
+            parsed_parameters: dict[str, Any] = json.loads(parameters) if parameters else {}
+            job = submit_workflow_run(
+                asset_id=model,
+                version=asset_version,
+                mode=mode,
+                inputs=parsed_inputs,
+                parameters=parsed_parameters,
+                develop_profile=develop_profile,
+            )
+        else:
+            raise typer.BadParameter("Provide --model for workflow_run or --benchmark for eval shim")
+
+        if wait:
+            job = wait_for_job(job["id"])
+
+        rows = [
+            ("job_id", job["id"]),
+            ("status", job["status"]),
+            ("type", job.get("type", "workflow_run")),
+        ]
+        if job.get("result"):
+            rows.append(("result", json.dumps(job["result"], sort_keys=True)))
+        success_panel("job submitted", rows)
     except FabricError as exc:
         print_error(str(exc))
         raise typer.Exit(code=1) from exc
@@ -465,8 +523,75 @@ def platform_job_status_cmd(
         raise typer.Exit(code=1) from exc
 
 
+@publish_app.command("model")
+def platform_publish_model_cmd(
+    config: Annotated[
+        Path,
+        typer.Option("--config", "-c", exists=True, dir_okay=False, readable=True),
+    ],
+    title: Annotated[str | None, typer.Option("--title", help="Display title")] = None,
+    visibility: Annotated[str, typer.Option("--visibility", help="private or public")] = "private",
+) -> None:
+    """Publish a new model asset from a local YAML config."""
+    from fabric.platform.publish import publish_model
+
+    try:
+        created = publish_model(config_path=config, title=title, visibility=visibility)
+        success_panel(
+            "model published",
+            [
+                ("asset_id", str(created.get("id", "—"))),
+                ("version", str(created.get("version", "1"))),
+                ("visibility", visibility),
+            ],
+        )
+    except FabricError as exc:
+        print_error(str(exc))
+        raise typer.Exit(code=1) from exc
+
+
+@publish_app.command("model-version")
+def platform_publish_model_version_cmd(
+    base: Annotated[str, typer.Option("--base", "-b", help="Base model asset id")],
+    checkpoint: Annotated[
+        Path,
+        typer.Option("--checkpoint", "-p", exists=True, help="Checkpoint .pt or directory"),
+    ],
+    config: Annotated[
+        Path | None,
+        typer.Option("--config", "-c", help="Version config YAML (defaults to latest)"),
+    ] = None,
+    version: Annotated[str | None, typer.Option("--version", "-v")] = None,
+    visibility: Annotated[str, typer.Option("--visibility", help="private or public")] = "private",
+) -> None:
+    """Publish a new model version with checkpoint upload."""
+    from fabric.platform.publish import publish_model_version
+
+    try:
+        result = publish_model_version(
+            asset_id=base,
+            config_path=config,
+            checkpoint_path=checkpoint,
+            version=version,
+            visibility=visibility,
+        )
+        success_panel(
+            "model version published",
+            [
+                ("asset_id", base),
+                ("version", str(result["version"])),
+                ("manifest_id", str(result["manifest"].get("id", "—"))),
+                ("visibility", visibility),
+            ],
+        )
+    except FabricError as exc:
+        print_error(str(exc))
+        raise typer.Exit(code=1) from exc
+
+
 platform_app.add_typer(upload_app)
 platform_app.add_typer(job_app)
+platform_app.add_typer(publish_app)
 
 
 app.add_typer(workflow_app)
