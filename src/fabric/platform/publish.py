@@ -110,6 +110,52 @@ def publish_model_version(
     return {"asset_id": asset_id, "version": version_label, "manifest": manifest}
 
 
+def publish_workflow(
+    *,
+    config_path: str | Path,
+    title: str | None = None,
+    visibility: str = "private",
+    meta: dict[str, Any] | None = None,
+    run_price_micros: int | None = None,
+) -> dict[str, Any]:
+    """Create a new workflow asset from a local YAML config.
+
+    Args:
+        config_path: Path to workflow config YAML (must include ``id``).
+        title: Optional display title.
+        visibility: ``private`` or ``public``.
+        meta: Optional asset meta.
+        run_price_micros: Optional per-run price for hosted execution.
+
+    Returns:
+        Created asset version payload from the API.
+    """
+    path = Path(config_path)
+    config_text = path.read_text()
+    parsed = yaml.safe_load(config_text) or {}
+    asset_id = parsed.get("id")
+    if not asset_id:
+        raise FabricError("Workflow config must include an 'id' field")
+
+    payload_meta = dict(meta or {})
+    if run_price_micros is not None:
+        payload_meta["run_price_micros"] = run_price_micros
+
+    client = PlatformClient()
+    return client.request(
+        "POST",
+        "/assets",
+        json={
+            "id": str(asset_id),
+            "kind": "workflow",
+            "title": title or str(asset_id),
+            "visibility": visibility,
+            "config_yaml": config_text,
+            "meta": payload_meta,
+        },
+    )
+
+
 def fork_model(*, asset_id: str, source_version: str = "1") -> dict[str, Any]:
     """Fork a public model into a private derivative asset.
 

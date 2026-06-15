@@ -123,6 +123,20 @@ def test_get_job_events(monkeypatch) -> None:
     assert events[0]["message"] == "validate_inputs"
 
 
+def test_plan_remote_submission_workflow_asset(tmp_path) -> None:
+    workflow_yaml = tmp_path / "W_000001.yaml"
+    workflow_yaml.write_text(
+        "id: W_000001\nschema_version: 1\ninputs:\n  batch_size:\n    type: int\n    default: 4\n"
+        "nodes:\n  eval_baseline:\n    op: eval\n    runtime: remote\n    benchmark: B_000010\n"
+        "    model: M_000003\n    inputs:\n      batch_size: $inputs.batch_size\n"
+        "outputs:\n  metrics:\n    from: eval_baseline.metrics\n"
+    )
+    workflow = Factory.workflow(str(workflow_yaml))
+    spec = plan_remote_submission(workflow, {"batch_size": 4})
+    assert spec["kind"] == "workflow_asset"
+    assert spec["asset_id"] == "W_000001"
+
+
 def test_plan_remote_submission_predict(tmp_path: Path) -> None:
     workflow_yaml = tmp_path / "W_predict.yaml"
     workflow_yaml.write_text(

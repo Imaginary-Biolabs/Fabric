@@ -523,6 +523,41 @@ def platform_job_status_cmd(
         raise typer.Exit(code=1) from exc
 
 
+@publish_app.command("workflow")
+def platform_publish_workflow_cmd(
+    config: Annotated[
+        Path,
+        typer.Option("--config", "-c", exists=True, dir_okay=False, readable=True),
+    ],
+    title: Annotated[str | None, typer.Option("--title", help="Display title")] = None,
+    visibility: Annotated[str, typer.Option("--visibility", help="private or public")] = "private",
+    run_price_micros: Annotated[
+        int | None, typer.Option("--run-price-micros", help="Per-run price in micros")
+    ] = None,
+) -> None:
+    """Publish a new workflow asset from a local YAML config."""
+    from fabric.platform.publish import publish_workflow
+
+    try:
+        created = publish_workflow(
+            config_path=config,
+            title=title,
+            visibility=visibility,
+            run_price_micros=run_price_micros,
+        )
+        success_panel(
+            "workflow published",
+            [
+                ("asset_id", str(created.get("id", "—"))),
+                ("version", str(created.get("version", "1"))),
+                ("visibility", visibility),
+            ],
+        )
+    except FabricError as exc:
+        print_error(str(exc))
+        raise typer.Exit(code=1) from exc
+
+
 @publish_app.command("model")
 def platform_publish_model_cmd(
     config: Annotated[
