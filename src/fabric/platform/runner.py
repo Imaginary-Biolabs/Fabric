@@ -17,7 +17,7 @@ from fabric.platform.jobs import (
 )
 from fabric.utils.errors import WorkflowError
 
-_REGISTRY_ASSET = re.compile(r"^[DBMLWC]_[0-9]{6}$")
+_REGISTRY_ASSET = re.compile(r"^[DBMLWCS]_[0-9]{6}$")
 _REGISTRY_WORKFLOW = re.compile(r"^W_[0-9]{6}$")
 
 

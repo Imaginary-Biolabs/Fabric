@@ -504,6 +504,33 @@ def platform_job_submit_cmd(
         raise typer.Exit(code=1) from exc
 
 
+@job_app.command("materialize-designs")
+def platform_job_materialize_designs_cmd(
+    job_id: Annotated[str, typer.Argument(help="Completed workflow job UUID")],
+    candidates: Annotated[
+        str | None,
+        typer.Option("--candidates", help="Comma-separated candidate ids"),
+    ] = None,
+) -> None:
+    """Materialize design candidates from a completed workflow job."""
+    from fabric.platform.publish import materialize_designs
+
+    candidate_ids = [item.strip() for item in candidates.split(",") if item.strip()] if candidates else None
+    try:
+        result = materialize_designs(job_id=job_id, candidate_ids=candidate_ids)
+        success_panel(
+            "designs materialized",
+            [
+                ("job_id", job_id),
+                ("count", str(len(result.get("promoted_designs", [])))),
+                ("result", json.dumps(result, sort_keys=True)),
+            ],
+        )
+    except FabricError as exc:
+        print_error(str(exc))
+        raise typer.Exit(code=1) from exc
+
+
 @job_app.command("status")
 def platform_job_status_cmd(
     job_id: Annotated[str, typer.Argument(help="Job UUID")],
@@ -518,6 +545,33 @@ def platform_job_status_cmd(
         if job.get("result"):
             rows.append(("result", json.dumps(job["result"], sort_keys=True)))
         success_panel("job status", rows)
+    except FabricError as exc:
+        print_error(str(exc))
+        raise typer.Exit(code=1) from exc
+
+
+@publish_app.command("design")
+def platform_publish_design_cmd(
+    config: Annotated[
+        Path,
+        typer.Option("--config", "-c", exists=True, dir_okay=False, readable=True),
+    ],
+    title: Annotated[str | None, typer.Option("--title", help="Display title")] = None,
+    visibility: Annotated[str, typer.Option("--visibility", help="private or public")] = "private",
+) -> None:
+    """Publish a new design asset from a local YAML config."""
+    from fabric.platform.publish import publish_design
+
+    try:
+        created = publish_design(config_path=config, title=title, visibility=visibility)
+        success_panel(
+            "design published",
+            [
+                ("asset_id", str(created.get("id", "—"))),
+                ("version", str(created.get("version", "1"))),
+                ("visibility", visibility),
+            ],
+        )
     except FabricError as exc:
         print_error(str(exc))
         raise typer.Exit(code=1) from exc

@@ -8,6 +8,7 @@ from fabric.core.workflow_nodes.base import (
 )
 from fabric.core.workflow_nodes.context import ExecutionContext
 from fabric.core.workflow_nodes.dataset_ingest import DatasetIngestExecutor
+from fabric.core.workflow_nodes.emit_designs import EmitDesignsExecutor
 from fabric.core.workflow_nodes.eval import EvalExecutor
 from fabric.core.workflow_nodes.loop import LoopExecutor
 from fabric.core.workflow_nodes.platform import PlatformExecutor
@@ -18,6 +19,7 @@ from fabric.core.workflow_nodes.wait import WaitExecutor
 
 __all__ = [
     "DatasetIngestExecutor",
+    "EmitDesignsExecutor",
     "ExecutionContext",
     "EvalExecutor",
     "LoopExecutor",

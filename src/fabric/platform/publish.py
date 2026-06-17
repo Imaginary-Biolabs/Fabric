@@ -110,6 +110,54 @@ def publish_model_version(
     return {"asset_id": asset_id, "version": version_label, "manifest": manifest}
 
 
+def publish_design(
+    *,
+    config_path: str | Path,
+    title: str | None = None,
+    visibility: str = "private",
+    meta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Create a new design asset from a local YAML config."""
+    path = Path(config_path)
+    config_text = path.read_text()
+    parsed = yaml.safe_load(config_text) or {}
+    asset_id = parsed.get("id")
+    if not asset_id:
+        raise FabricError("Design config must include an 'id' field")
+
+    payload_meta = dict(meta or {})
+    entity_class = parsed.get("entity_class")
+    if entity_class and "entity_class" not in payload_meta:
+        payload_meta["entity_class"] = entity_class
+
+    client = PlatformClient()
+    return client.request(
+        "POST",
+        "/assets",
+        json={
+            "id": str(asset_id),
+            "kind": "design",
+            "title": title or str(asset_id),
+            "visibility": visibility,
+            "config_yaml": config_text,
+            "meta": payload_meta,
+        },
+    )
+
+
+def materialize_designs(
+    *,
+    job_id: str,
+    candidate_ids: list[str] | None = None,
+) -> dict[str, Any]:
+    """Materialize workflow design candidates into private S_* assets."""
+    client = PlatformClient()
+    body: dict[str, Any] = {}
+    if candidate_ids:
+        body["candidate_ids"] = candidate_ids
+    return client.request("POST", f"/jobs/{job_id}/materialize-designs", json=body)
+
+
 def publish_workflow(
     *,
     config_path: str | Path,
