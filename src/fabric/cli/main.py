@@ -678,9 +678,103 @@ def platform_publish_model_version_cmd(
         raise typer.Exit(code=1) from exc
 
 
+competition_app = typer.Typer(
+    name="competition",
+    help="Register teams and submit competition artifacts.",
+    no_args_is_help=True,
+)
+
+
+@competition_app.command("submit")
+def platform_competition_submit_cmd(
+    competition: Annotated[str, typer.Option("--competition", "-c", help="Competition id, e.g. C_000004")],
+    artifact: Annotated[str, typer.Option("--artifact", "-a", help="Model or design asset id")],
+    team_name: Annotated[
+        str | None, typer.Option("--team-name", help="Create or reuse by registering this team name")
+    ] = None,
+    team_id: Annotated[str | None, typer.Option("--team-id", help="Existing team UUID")] = None,
+    asset_version: Annotated[str, typer.Option("--asset-version", help="Artifact version")] = "1",
+) -> None:
+    """Submit a private model or design to a competition."""
+    from fabric.platform.competitions import submit_to_competition
+
+    try:
+        result = submit_to_competition(
+            competition_id=competition,
+            artifact_id=artifact,
+            team_name=team_name,
+            team_id=team_id,
+            asset_version=asset_version,
+        )
+        submission = result.get("submission", {})
+        success_panel(
+            "competition submission",
+            [
+                ("competition", competition),
+                ("artifact", artifact),
+                ("submission_id", str(submission.get("id", "—"))),
+                ("open_job_id", str(submission.get("open_job_id", "—"))),
+                ("status", str(submission.get("status", "—"))),
+            ],
+        )
+    except FabricError as exc:
+        print_error(str(exc))
+        raise typer.Exit(code=1) from exc
+
+
+@competition_app.command("advance-phase")
+def platform_competition_advance_phase_cmd(
+    competition: Annotated[str, typer.Option("--competition", "-c", help="Competition id")],
+    phase: Annotated[
+        str | None, typer.Option("--phase", help="Target phase: scoring or revealed")
+    ] = None,
+) -> None:
+    """Advance competition phase (close submissions, reveal hidden eval)."""
+    from fabric.platform.competitions import advance_phase
+
+    try:
+        result = advance_phase(competition_id=competition, phase=phase)
+        rows = [("competition", competition), ("phase", str(result.get("phase", "—")))]
+        hidden_jobs = result.get("hidden_jobs_enqueued") or []
+        if hidden_jobs:
+            rows.append(("hidden_jobs", ", ".join(hidden_jobs)))
+        assets = result.get("assets_published") or []
+        if assets:
+            rows.append(("assets_published", ", ".join(assets)))
+        success_panel("competition phase", rows)
+    except FabricError as exc:
+        print_error(str(exc))
+        raise typer.Exit(code=1) from exc
+
+
+@competition_app.command("leaderboard")
+def platform_competition_leaderboard_cmd(
+    competition: Annotated[str, typer.Option("--competition", "-c", help="Competition id")],
+    kind: Annotated[str, typer.Option("--kind", help="open or hidden")] = "open",
+) -> None:
+    """Fetch a competition leaderboard."""
+    from fabric.platform.competitions import get_leaderboard
+
+    try:
+        result = get_leaderboard(competition_id=competition, kind=kind)
+        items = result.get("items") or []
+        if not items:
+            info_panel("No leaderboard entries yet.", title=f"{competition} ({kind})")
+            return
+        rows = [
+            (str(item.get("rank", "—")), f"{item.get('team', '—')} · {item.get('score', '—')}")
+            for item in items
+        ]
+        branded_result_table(f"{competition} leaderboard ({kind})", rows)
+    except FabricError as exc:
+        print_error(str(exc))
+        raise typer.Exit(code=1) from exc
+
+
 platform_app.add_typer(upload_app)
 platform_app.add_typer(job_app)
 platform_app.add_typer(publish_app)
+platform_app.add_typer(competition_app)
 
 
 app.add_typer(workflow_app)
