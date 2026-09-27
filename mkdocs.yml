@@ -1,8 +1,8 @@
 site_name: Fabric
 site_description: Python orchestration for molecular ML on Grumpy
-site_url: https://imaginary-biolabs.github.io/fabric/
-repo_url: https://github.com/Imaginary-Biolabs/fabric
-repo_name: Imaginary-Biolabs/fabric
+site_url: https://imaginary-biolabs.github.io/Fabric/
+repo_url: https://github.com/Imaginary-Biolabs/Fabric
+repo_name: Imaginary-Biolabs/Fabric
 edit_uri: edit/main/docs/
 
 theme:
@@ -16,20 +16,9 @@ theme:
   icon:
     repo: fontawesome/brands/github
   palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: imaginary
-      primary: custom
-      accent: custom
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: imaginary-dark
-      primary: custom
-      accent: custom
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
+    scheme: imaginary
+    primary: custom
+    accent: custom
   features:
     - navigation.instant
     - navigation.sections
@@ -79,7 +68,7 @@ extra:
   generator: false
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/Imaginary-Biolabs/fabric
+      link: https://github.com/Imaginary-Biolabs/Fabric
     - icon: fontawesome/solid/globe
       link: https://www.imaginary.bio
 
