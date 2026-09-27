@@ -10,9 +10,7 @@ theme:
   custom_dir: docs/overrides
   logo: assets/fabric_icon.svg
   favicon: assets/fabric_favicon.svg
-  font:
-    text: IBM Plex Sans
-    code: IBM Plex Mono
+  font: false
   icon:
     repo: fontawesome/brands/github
   palette:
