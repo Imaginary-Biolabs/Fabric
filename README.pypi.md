@@ -1,9 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/fabric_logo_dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="docs/assets/fabric_logo.png">
-    <img src="docs/assets/fabric_logo.png" alt="Fabric" width="280">
-  </picture>
+  <img src="https://raw.githubusercontent.com/Imaginary-Biolabs/Fabric/main/docs/assets/fabric_logo.png" alt="Fabric" width="280">
 </p>
 
 <p align="center">

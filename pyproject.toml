@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "imaginary-fabric"
 version = "0.1.0"
 description = "Python orchestration layer for molecular ML on Grumpy."
-readme = "README.md"
+readme = "README.pypi.md"
 requires-python = ">=3.10"
 authors = [{ name = "Imaginary Biolabs GmbH", email = "hello@imaginary.bio" }]
 license = { text = "Proprietary" }
@@ -64,10 +64,10 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Imaginary-Biolabs/fabric"
-Documentation = "https://imaginary-biolabs.github.io/fabric/"
-Repository = "https://github.com/Imaginary-Biolabs/fabric"
-Issues = "https://github.com/Imaginary-Biolabs/fabric/issues"
+Homepage = "https://github.com/Imaginary-Biolabs/Fabric"
+Documentation = "https://imaginary-biolabs.github.io/Fabric/"
+Repository = "https://github.com/Imaginary-Biolabs/Fabric"
+Issues = "https://github.com/Imaginary-Biolabs/Fabric/issues"
 
 [tool.setuptools.package-dir]
 "" = "src"
