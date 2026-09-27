@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Imaginary-Biolabs/Fabric/main/docs/assets/fabric_logo.png" alt="Fabric" width="280">
+  <img src="https://raw.githubusercontent.com/Imaginary-Biolabs/Fabric/main/docs/assets/fabric_logo.png" alt="Fabric" width="320">
 </p>
 
 <p align="center">
